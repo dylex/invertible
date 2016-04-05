@@ -1,0 +1,5 @@
+A Haskell representation for total isomorphisms: an arrow paired with its
+inverse.  Includes a number of useful isomorphisms and operations, as well as
+compatibility with the invariant and lens packages.
+
+See also the Piso, partial-isomorphisms, semi-iso, and lens packages.
