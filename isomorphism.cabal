@@ -1,0 +1,56 @@
+name:                isomorphism
+version:             0.1
+synopsis:            Total isomorphisms
+description:         A representation for total isomorphisms: an arrow paired with its inverse.  Includes a number of useful isomorphisms and operations, as well as compatibility with the invariant and lens packages.
+license:             BSD3
+author:              Dylan Simon
+maintainer:          dylan@dylex.net
+copyright:           2016
+category:            Data
+build-type:          Simple
+cabal-version:       >=1.10
+
+flag invariant
+  description: Use the invariant package
+
+flag lens
+  description: Use the lens package
+
+library
+  other-modules:     
+    Data.Isomorphism.Internal
+  exposed-modules:     
+    Data.Isomorphism.Type
+    Data.Isomorphism.Prelude
+    Data.Isomorphism.TH
+    Data.Isomorphism.Arrow
+    Data.Isomorphism.Bool
+    Data.Isomorphism.Either
+    Data.Isomorphism.Tuple
+    Data.Isomorphism.List
+    Data.Isomorphism.Maybe
+    Data.Isomorphism.Function
+    Data.Isomorphism.Functor
+    Data.Isomorphism.Coerce
+    Data.Isomorphism.Complex
+    Data.Isomorphism.Bits
+    Data.Isomorphism.Ord
+    Data.Isomorphism
+
+  build-depends:       
+    base >= 4.8 && <5,
+    haskell-src-meta == 0.6.*,
+    template-haskell == 2.*
+  default-language:    Haskell2010
+  default-extensions: TypeOperators, TemplateHaskell, QuasiQuotes
+  other-extensions: KindSignatures, FlexibleInstances
+  ghc-options: -Wall
+
+  if flag(invariant)
+    exposed-modules: Data.Isomorphism.Invariant
+    build-depends: invariant
+
+  if flag(lens)
+    exposed-modules: Data.Isomorphism.Lens
+    build-depends: lens == 4.*
+    other-extensions: RankNTypes
