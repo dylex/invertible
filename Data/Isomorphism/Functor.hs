@@ -1,5 +1,6 @@
 -- |
 -- Versions of functions from "Data.Functor" over isomorphisms.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Functor
   ( fmap
   , identity

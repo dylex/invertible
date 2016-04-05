@@ -42,8 +42,7 @@ library
     haskell-src-meta == 0.6.*,
     template-haskell == 2.*
   default-language:    Haskell2010
-  default-extensions: TypeOperators, TemplateHaskell, QuasiQuotes
-  other-extensions: KindSignatures, FlexibleInstances
+  default-extensions: TypeOperators, QuasiQuotes
   ghc-options: -Wall
 
   if flag(invariant)
@@ -53,4 +52,3 @@ library
   if flag(lens)
     exposed-modules: Data.Isomorphism.Lens
     build-depends: lens == 4.*
-    other-extensions: RankNTypes

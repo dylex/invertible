@@ -1,5 +1,6 @@
 -- |
 -- Isomorphisms that operate over 'Ordering'.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Ord
   ( down
   ) where

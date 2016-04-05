@@ -1,5 +1,6 @@
 -- |
 -- Versions of functions from "Data.Complex" as isomorphisms.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Complex
   ( complex
   , polar

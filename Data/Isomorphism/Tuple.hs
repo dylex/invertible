@@ -1,5 +1,6 @@
 -- |
 -- Versions of functions from "Data.Tuple" as isomorphisms.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Tuple
   ( fst
   , snd

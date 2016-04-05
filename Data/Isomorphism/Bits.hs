@@ -1,5 +1,6 @@
 -- |
 -- Versions of functions from "Data.Bits" as isomorphisms.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Bits
   ( complement
   ) where

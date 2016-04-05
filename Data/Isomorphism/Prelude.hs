@@ -1,6 +1,7 @@
 -- |
 -- The \"Prelude\" for isomorphism, which re-exports various isomorphisms similar to functions from "Prelude".
 -- Most \"un\"-functions are left out for obvious reasons.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Prelude
   ( module Data.Isomorphism.Type
   , (C.>>>)

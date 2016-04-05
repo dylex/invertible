@@ -1,5 +1,6 @@
 -- |
 -- Versions of functions from "Control.Arrow" over isomorphisms.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Arrow
   ( arr
   , first

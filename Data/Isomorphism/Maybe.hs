@@ -1,5 +1,6 @@
 -- |
 -- Versions of functions from "Data.Maybe" as isomorphisms.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Maybe
   ( isJust
   , isNothing

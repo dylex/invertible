@@ -1,3 +1,4 @@
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Internal
   ( involution
   , invert

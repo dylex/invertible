@@ -1,5 +1,6 @@
 -- |
 -- Convenient construction of function isomorphisms using case-like syntax.
+{-# LANGUAGE TemplateHaskell, Trustworthy #-}
 module Data.Isomorphism.TH
   ( isoCase
   ) where

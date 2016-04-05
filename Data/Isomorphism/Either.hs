@@ -1,5 +1,6 @@
 -- |
 -- Versions of functions from "Data.Either" as isomorphisms.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Either
   ( switch
   , isLeft

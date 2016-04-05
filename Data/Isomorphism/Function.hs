@@ -1,5 +1,6 @@
 -- |
 -- Versions of functions from "Data.Function" as isomorphisms.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Function
   ( consts
   , const

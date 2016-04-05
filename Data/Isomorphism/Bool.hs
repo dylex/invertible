@@ -1,5 +1,6 @@
 -- |
 -- Versions of functions from "Data.Bool" as isomorphisms.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.Bool
   ( not
   ) where

@@ -1,6 +1,6 @@
 -- |
 -- The base representation of an isomorphism.
-{-# LANGUAGE KindSignatures, FlexibleInstances, CPP #-}
+{-# LANGUAGE Trustworthy, KindSignatures, FlexibleInstances, CPP #-}
 module Data.Isomorphism.Type
   ( Isomorphism(..)
   , type (<->)

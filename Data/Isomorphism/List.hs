@@ -1,5 +1,6 @@
 -- |
 -- Isomorphisms that operate over lists.
+{-# LANGUAGE Safe #-}
 module Data.Isomorphism.List
   ( cons
   , uncons
