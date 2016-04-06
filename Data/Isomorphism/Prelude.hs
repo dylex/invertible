@@ -19,13 +19,16 @@ module Data.Isomorphism.Prelude
   , cons
   , uncons
   , fmap
+  , map
   , reverse
   , zip
+  , zip3
+  , zipWith
   , lines
   , words
   ) where
 
-import Prelude hiding (not, const, flip, fmap, fst, snd, curry, uncurry, reverse, zip, unzip, lines, words)
+import Prelude hiding (not, const, flip, fmap, fst, snd, curry, uncurry, map, reverse, zip, zip3, unzip, zipWith, lines, words)
 import qualified Control.Category as C
 
 import Data.Isomorphism.Type

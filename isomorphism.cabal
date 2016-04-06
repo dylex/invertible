@@ -11,10 +11,13 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 flag invariant
-  description: Use the invariant package
+  description: Support the invariant package
 
 flag lens
-  description: Use the lens package
+  description: Support the lens package
+
+flag HList
+  description: Support the HList package
 
 library
   other-modules:     
@@ -52,3 +55,7 @@ library
   if flag(lens)
     exposed-modules: Data.Isomorphism.Lens
     build-depends: lens == 4.*
+
+  if flag(HList)
+    exposed-modules: Data.Isomorphism.HList
+    build-depends: HList == 0.4.*
