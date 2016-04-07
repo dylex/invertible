@@ -2,7 +2,8 @@
 -- Invariant monoidal functors.
 {-# LANGUAGE Safe, FlexibleInstances #-}
 module Control.Invariant.Monoidal
-  ( Monoidal(..)
+  ( (>$<)
+  , Monoidal(..)
   , (>*), (*<)
   , liftI2
   , MonoidalPlus(..)
@@ -16,6 +17,12 @@ import Data.Isomorphism.Type
 import Data.Isomorphism.Prelude (fst, snd, id)
 import Data.Isomorphism.Either (lft)
 import Control.Invariant.Functor
+
+-- |Another synonym for 'fmap' to match other operators in this module.
+(>$<) :: Functor f => a <-> b -> f a -> f b
+(>$<) = fmap
+
+infixl 4 >$<
 
 -- |Lax invariant monoidal functor.
 -- This roughly corresponds to 'Applicative', which, for covariant functors, is equivalent to a monoidal functor.
@@ -47,7 +54,7 @@ instance Monoidal (Isomorphism (->) ()) where
 
 -- |Monoidal functors that allow choice.
 class Monoidal f => MonoidalPlus f where
-  -- |An always-failing value.
+  -- |An always-failing (and ignoring) value.
   zero :: f a
   -- |Associative binary choice.
   (>|<) :: f a -> f b -> f (Either a b)
