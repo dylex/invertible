@@ -8,6 +8,10 @@ module Data.Isomorphism.Type
 
 import Prelude hiding (id, (.))
 import Control.Category (Category(..))
+#ifdef VERSION_semigroupoids
+import Data.Semigroupoid (Semigroupoid(..))
+import Data.Groupoid (Groupoid(..))
+#endif
 #ifdef VERSION_invariant
 import Data.Functor.Invariant (Invariant(..), Invariant2(..))
 #endif
@@ -35,6 +39,14 @@ type (<->) = Isomorphism (->)
 instance Category a => Category (Isomorphism a) where
   id = id :<->: id
   (f1 :<->: g1) . (f2 :<->: g2) = f1 . f2 :<->: g2 . g1
+
+#ifdef VERSION_semigroupoids
+instance Semigroupoid a => Semigroupoid (Isomorphism a) where
+  o (f1 :<->: g1) (f2 :<->: g2) = o f1 f2 :<->: o g2 g1
+
+instance Semigroupoid a => Groupoid (Isomorphism a) where
+  inv (f :<->: g) = g :<->: f
+#endif
 
 #ifdef VERSION_invariant
 instance Invariant (Isomorphism (->) b) where

@@ -8,7 +8,10 @@ maintainer:          dylan@dylex.net
 copyright:           2016
 category:            Data
 build-type:          Simple
-cabal-version:       >=1.10
+cabal-version:       >=1.20
+
+flag semigroupoids
+  description: Support the semigroupoids package
 
 flag invariant
   description: Support the invariant package
@@ -47,6 +50,10 @@ library
   default-language:    Haskell2010
   default-extensions: TypeOperators, QuasiQuotes
   ghc-options: -Wall
+
+  if flag(semigroupoids)
+    exposed-modules: Data.Isomorphism.Semigroupoid
+    build-depends: semigroupoids >= 4 (Data.Semigroupoid, Data.Groupoid, Data.Isomorphism as Data.Semigroupoid.Isomorphism)
 
   if flag(invariant)
     exposed-modules: Data.Isomorphism.Invariant
