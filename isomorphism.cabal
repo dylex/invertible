@@ -27,20 +27,20 @@ library
     Data.Isomorphism.Internal
   exposed-modules:     
     Data.Isomorphism.Type
-    Data.Isomorphism.Prelude
     Data.Isomorphism.TH
+    Data.Isomorphism.Prelude
     Data.Isomorphism.Arrow
+    Data.Isomorphism.Bits
     Data.Isomorphism.Bool
-    Data.Isomorphism.Either
-    Data.Isomorphism.Tuple
-    Data.Isomorphism.List
-    Data.Isomorphism.Maybe
-    Data.Isomorphism.Function
-    Data.Isomorphism.Functor
     Data.Isomorphism.Coerce
     Data.Isomorphism.Complex
-    Data.Isomorphism.Bits
+    Data.Isomorphism.Either
+    Data.Isomorphism.Function
+    Data.Isomorphism.Functor
+    Data.Isomorphism.List
+    Data.Isomorphism.Maybe
     Data.Isomorphism.Ord
+    Data.Isomorphism.Tuple
     Data.Isomorphism
 
   build-depends:       
