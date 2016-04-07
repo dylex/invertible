@@ -1,5 +1,9 @@
-A Haskell representation for total isomorphisms: an arrow paired with its
-inverse.  Includes a number of useful isomorphisms and operations, as well as
-compatibility with the invariant and lens packages.
+Haskell total isomorphisms and invariants
 
-See also the Piso, partial-isomorphisms, semi-iso, and lens packages.
+A representation for total isomorphisms: an arrow paired with its inverse.
+Classes for invariant functors and monoidal functors.  Includes a number of
+useful isomorphisms and operations, as well as interoperability with related
+packages.
+
+See also: Piso, partial-isomorphisms, semi-iso, lens, and semigroupoids
+packages.

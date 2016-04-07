@@ -1,12 +1,12 @@
 name:                isomorphism
 version:             0.1
-synopsis:            Total isomorphisms
-description:         A representation for total isomorphisms: an arrow paired with its inverse.  Includes a number of useful isomorphisms and operations, as well as compatibility with the invariant and lens packages.
+synopsis:            Total isomorphisms and invariant functors
+description:         A representation for total isomorphisms: an arrow paired with its inverse.  Classes for invariant functors and monoidal functors.  Includes a number of useful isomorphisms and operations, as well as interoperability with related packages.
 license:             BSD3
 author:              Dylan Simon
 maintainer:          dylan@dylex.net
 copyright:           2016
-category:            Data
+category:            Data, Control
 build-type:          Simple
 cabal-version:       >=1.20
 
@@ -42,6 +42,8 @@ library
     Data.Isomorphism.Ord
     Data.Isomorphism.Tuple
     Data.Isomorphism
+    Control.Invariant.Functor
+    Control.Invariant.Monoidal
 
   build-depends:       
     base >= 4.8 && <5,

@@ -2,15 +2,27 @@
 -- Versions of functions from "Data.Function" as isomorphisms.
 {-# LANGUAGE Safe #-}
 module Data.Isomorphism.Function
-  ( consts
+  ( id
+  , (.)
+  , consts
   , const
   , flip
   ) where
 
-import Prelude hiding (const, flip)
+import Prelude hiding (id, (.), const, flip)
+import qualified Control.Category as C
 import qualified Data.Function as F
 
 import Data.Isomorphism.Type
+
+-- |Identity isomorphism.
+id :: a <-> a
+id = C.id
+
+-- |Isomorphism composition
+(.) :: (b <-> c) -> (a <-> b) -> a <-> c
+(.) = (C..)
+infixr 9 .
 
 -- |Bidirectional constant function (not a true isomorphism).
 consts :: a -> b -> a <-> b

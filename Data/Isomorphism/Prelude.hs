@@ -4,14 +4,14 @@
 {-# LANGUAGE Safe #-}
 module Data.Isomorphism.Prelude
   ( module Data.Isomorphism.Type
-  , (C.>>>)
-  , (C.<<<)
   , module Data.Isomorphism.Internal
 
   , enum
 
   , const
   , flip
+  , id
+  , (.)
   , not
   , fst
   , snd
@@ -19,6 +19,7 @@ module Data.Isomorphism.Prelude
   , cons
   , uncons
   , fmap
+  , (<$>)
   , map
   , reverse
   , zip
@@ -28,8 +29,7 @@ module Data.Isomorphism.Prelude
   , words
   ) where
 
-import Prelude hiding (not, const, flip, fmap, fst, snd, curry, uncurry, map, reverse, zip, zip3, unzip, zipWith, lines, words)
-import qualified Control.Category as C
+import Prelude hiding (not, id, (.), const, flip, fmap, (<$>), fst, snd, curry, uncurry, map, reverse, zip, zip3, unzip, zipWith, lines, words)
 
 import Data.Isomorphism.Type
 import Data.Isomorphism.Internal

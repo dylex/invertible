@@ -1,11 +1,12 @@
 -- |
 -- Isomorphisms.
--- This and other modules in this package are intended to be imported qualified, e.g.,:
+-- The type '<->' is the most useful, representing an isomorphism between two types.
+-- Isomorphisms can be constructed from two functions with ':<->:' or from a set of Haskell cases using 'isoCase'.
+--
+-- This and other modules in this package export functionality generally mirroring that provided by the base modules, but over isomorphisms.  They are thus intended to be imported qualified, e.g.,:
 -- 
 -- > import qualified Data.Isomorphism as Iso
 --
--- The type '<->' is the most useful, representing an isomorphism between two types.
--- Isomorphisms can be constructed from two functions with ':<->:' or from a set of Haskell cases using 'isoCase'.
 module Data.Isomorphism
   ( module Data.Isomorphism.Type
   , module Data.Isomorphism.TH
