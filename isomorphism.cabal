@@ -67,4 +67,5 @@ library
 
   if flag(HList)
     exposed-modules: Data.Isomorphism.HList
+    exposed-modules: Control.Invariant.Monoidal.HList
     build-depends: HList == 0.4.*

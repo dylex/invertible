@@ -2,10 +2,24 @@
 -- Invariant monoidal functors.
 {-# LANGUAGE Safe, FlexibleInstances #-}
 module Control.Invariant.Monoidal
-  ( (>$<)
+  ( -- * Functor
+    (>$<)
+  -- * Monoidal
   , Monoidal(..)
   , (>*), (*<)
+  -- ** Tuple combinators
   , liftI2
+  , liftI3
+  , liftI4
+  , liftI5
+  , (>*<<)
+  , (>*<<<)
+  , (>*<<<<)
+  , (>>*<)
+  , (>>>*<)
+  , (>>>>*<)
+  , (>>*<<)
+  -- * MonoidalPlus
   , MonoidalPlus(..)
   , possible
   ) where
@@ -14,8 +28,9 @@ import Prelude hiding (Functor(..), (<$>), fst, snd, id)
 import Control.Arrow ((&&&), (***))
 
 import Data.Isomorphism.Type
-import Data.Isomorphism.Prelude (fst, snd, id)
+import Data.Isomorphism.Prelude (id)
 import Data.Isomorphism.Either (lft)
+import Data.Isomorphism.Tuple
 import Control.Invariant.Functor
 
 -- |Another synonym for 'fmap' to match other operators in this module.
@@ -34,18 +49,54 @@ class Functor f => Monoidal f where
   (>*<) :: f a -> f b -> f (a, b)
 
 -- | Sequence actions, discarding/inhabiting the unit value of the first argument.
-(>*) :: Monoidal f => f () -> f a -> f a
-(>*) = liftI2 snd
+(*<) :: Monoidal f => f () -> f a -> f a
+(*<) = liftI2 snd
 
 -- | Sequence actions, discarding/inhabiting the unit value of the second argument.
-(*<) :: Monoidal f => f a -> f () -> f a
-(*<) = liftI2 fst
+(>*) :: Monoidal f => f a -> f () -> f a
+(>*) = liftI2 fst
 
 infixl 4 >*, >*<, *<
 
 -- |Lift an (uncurried) isomorphism into a monoidal functor.
 liftI2 :: Monoidal f => ((a, b) <-> c) -> f a -> f b -> f c
 liftI2 f a b = f <$> (a >*< b)
+
+liftI3 :: Monoidal f => ((a, b, c) <-> d) -> f a -> f b -> f c -> f d
+liftI3 f a b c = f <$> (a >*< b >>*< c)
+
+liftI4 :: Monoidal f => ((a, b, c, d) <-> e) -> f a -> f b -> f c -> f d -> f e
+liftI4 f a b c d = f <$> (a >*< b >>*< c >>>*< d)
+
+liftI5 :: Monoidal f => ((a, b, c, d, e) <-> g) -> f a -> f b -> f c -> f d -> f e -> f g
+liftI5 f a b c d e = f <$> (a >*< b >>*< c >>>*< d >>>>*< e)
+
+(>>*<) :: Monoidal f => f (a, b) -> f c -> f (a, b, c)
+(>>*<) = liftI2 flatten2_1
+
+(>>>*<) :: Monoidal f => f (a, b, c) -> f d -> f (a, b, c, d)
+(>>>*<) = liftI2 flatten3_1
+
+(>>>>*<) :: Monoidal f => f (a, b, c, d) -> f e -> f (a, b, c, d, e)
+(>>>>*<) = liftI2 flatten4_1
+
+infixl 4 >>*<, >>>*<, >>>>*<
+
+(>*<<) :: Monoidal f => f a -> f (b, c) -> f (a, b, c)
+(>*<<) = liftI2 flatten1_2
+
+(>*<<<) :: Monoidal f => f a -> f (b, c, d) -> f (a, b, c, d)
+(>*<<<) = liftI2 flatten1_3
+
+(>*<<<<) :: Monoidal f => f a -> f (b, c, d, e) -> f (a, b, c, d, e)
+(>*<<<<) = liftI2 flatten1_4
+
+infixr 3 >*<<, >*<<<, >*<<<<
+
+(>>*<<) :: Monoidal f => f (a, b) -> f (c, d) -> f (a, b, c, d)
+(>>*<<) = liftI2 flatten2_2
+
+infix 3 >>*<<
 
 instance Monoidal (Isomorphism (->) ()) where
   unit = id
