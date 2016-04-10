@@ -15,4 +15,4 @@ import Control.Invariant.Monoidal
 (>:*<) :: Monoidal f => f a -> f (HL.HList l) -> f (HL.HList (a ': l))
 (>:*<) = liftI2 hCons
 
-infixr 5 >:*<
+infixr 4 >:*<
