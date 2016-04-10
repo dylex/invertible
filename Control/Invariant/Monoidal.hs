@@ -24,6 +24,7 @@ module Control.Invariant.Monoidal
   -- * MonoidalAlt
   , MonoidalAlt(..)
   , possible
+  , defaulting
   , while
   ) where
 
@@ -35,6 +36,7 @@ import Data.Isomorphism.Prelude (id)
 import Data.Isomorphism.Either (lft)
 import Data.Isomorphism.Tuple
 import Data.Isomorphism.List (cons)
+import Data.Isomorphism.Maybe (fromMaybe)
 import Control.Invariant.Functor
 
 -- |Another synonym for 'fmap' to match other operators in this module.
@@ -117,6 +119,10 @@ infixl 3 >|<
 -- |Analogous to 'Control.Applicative.optional'.
 possible :: MonoidalAlt f => f a -> f (Maybe a)
 possible f = lft >$< (f >|< unit)
+
+-- |Return a default value if a monoidal functor fails, and only apply it to non-default values.
+defaulting :: (MonoidalAlt f, Eq a) => a -> f a -> f a
+defaulting a f = fromMaybe a >$< possible f
 
 -- |Repeatedly apply a monoidal functor until it fails.  Analogous to 'Control.Applicative.many'.
 while :: MonoidalAlt f => f a -> f [a]
