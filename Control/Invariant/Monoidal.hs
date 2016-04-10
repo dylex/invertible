@@ -21,8 +21,8 @@ module Control.Invariant.Monoidal
   , (>>>*<)
   , (>>>>*<)
   , (>>*<<)
-  -- * MonoidalPlus
-  , MonoidalPlus(..)
+  -- * MonoidalAlt
+  , MonoidalAlt(..)
   , possible
   , while
   ) where
@@ -108,19 +108,16 @@ instance Monoidal (Isomorphism (->) ()) where
   (ua :<->: au) >*< (ub :<->: bu) = ua &&& ub :<->: uncurry mappend . (au *** bu)
 
 -- |Monoidal functors that allow choice.
-class Monoidal f => MonoidalPlus f where
-  -- |An always-failing (and ignoring) value.
-  -- It's not clear whether this makes sense here, and may not be useful (or possible) in all cases.
-  zero :: f a
+class Monoidal f => MonoidalAlt f where
   -- |Associative binary choice.
   (>|<) :: f a -> f b -> f (Either a b)
 
 infixl 3 >|<
 
 -- |Analogous to 'Control.Applicative.optional'.
-possible :: MonoidalPlus f => f a -> f (Maybe a)
+possible :: MonoidalAlt f => f a -> f (Maybe a)
 possible f = lft >$< (f >|< unit)
 
 -- |Repeatedly apply a monoidal functor until it fails.  Analogous to 'Control.Applicative.many'.
-while :: MonoidalPlus f => f a -> f [a]
+while :: MonoidalAlt f => f a -> f [a]
 while f = cons >$< possible (f >*< while f)
