@@ -12,9 +12,13 @@ module Control.Invariant.Functor
   ) where
 
 import Prelude hiding ((.), Functor(..), (<$>))
+import Control.Arrow (Arrow)
+import Control.Category ((.))
+import Data.Monoid (Endo(..))
 
+import Control.BiArrow ((^^<<), inv)
 import Data.Bijection.Type
-import Data.Bijection.Prelude ((.))
+import Data.Bijection.Monoid (BiEndo(..))
 
 -- |An invariant version of 'Data.Functor.Functor', equivalent to 'Data.Functor.Inviarant.Invariant'.
 class Functor f where
@@ -25,6 +29,11 @@ class Functor f where
 (<$>) = fmap
 infixl 4 <$>
 
-instance Functor (Bijection (->) a) where
-  fmap = (.)
+instance Arrow a => Functor (Bijection a b) where
+  fmap = (^^<<)
 
+instance Functor Endo where
+  fmap (f :<->: g) (Endo a) = Endo $ f . a . g
+
+instance Functor BiEndo where
+  fmap f (BiEndo a) = BiEndo $ f . a . inv f
