@@ -9,7 +9,7 @@ module Data.Invertible.HList
   , hZip
   ) where
 
-import qualified Data.HList.HList as HL
+import qualified Data.HList as HL
 import Data.Proxy (Proxy(..))
 
 import Data.Invertible.Bijection

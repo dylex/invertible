@@ -8,8 +8,7 @@ module Control.Invertible.Monoidal.HList
   ) where
 
 import Prelude hiding (Functor(..), (<$>), fst, snd, id)
-import qualified Data.HList.FakePrelude as HL
-import qualified Data.HList.HList as HL
+import qualified Data.HList as HL
 
 import Data.Invertible.HList
 import Control.Invertible.Monoidal

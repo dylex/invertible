@@ -6,6 +6,8 @@ description:
   arrow paired with its inverse).  Classes for invariant functors and monoidal
   functors.  Includes a number of useful bijections and operations, as well as
   interoperability with related packages.
+  .
+  Most users will want to import one or more of "Data.Invertible" qualified, "Control.Invertible.Monoidal" unqualified, and any additional compatibility modules.
 license:             BSD3
 author:              Dylan Simon
 maintainer:          dylan@dylex.net
