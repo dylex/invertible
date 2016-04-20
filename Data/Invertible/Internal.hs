@@ -6,7 +6,7 @@ module Data.Invertible.Internal
 
 import Data.Invertible.Bijection
 
--- |Invert an isomorphism by exchanging the two arrows (same as 'Control.Invertible.BiArrow.inv').
+-- |Invert an isomorphism by exchanging the two arrows (same as 'Control.Invertible.BiArrow.invert').
 invert :: Bijection a b c -> Bijection a c b
 invert (f :<->: g) = g :<->: f
 {-# INLINE invert #-}

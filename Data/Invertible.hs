@@ -7,13 +7,13 @@
 -- 
 -- > import qualified Data.Invertible as Inv
 --
+{-# LANGUAGE Safe #-}
 module Data.Invertible
   ( module Data.Invertible.Bijection
   , module Data.Invertible.TH
   , module Data.Invertible.Prelude
   , module Data.Invertible.Bits
   , module Data.Invertible.Bool
-  , module Data.Invertible.Coerce
   , module Data.Invertible.Complex
   , module Data.Invertible.Either
   , module Data.Invertible.Function
@@ -32,7 +32,6 @@ import Data.Invertible.TH
 import Data.Invertible.Prelude
 import Data.Invertible.Bits
 import Data.Invertible.Bool
-import Data.Invertible.Coerce
 import Data.Invertible.Complex
 import Data.Invertible.Either
 import Data.Invertible.Function

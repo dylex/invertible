@@ -4,6 +4,7 @@
 module Data.Invertible.List
   ( cons
   , uncons
+  , consMaybe
   , repLen
   , map
   , reverse
@@ -36,9 +37,17 @@ cons =
     Nothing <-> []
   |]
 
--- |Convert between the non-empty list @head:tail@ and @'Just' (head, tail)@. (@'Control.Invertible.BiArrow.inv' 'cons'@)
+-- |Convert between the non-empty list @head:tail@ and @'Just' (head, tail)@. (@'Control.Invertible.BiArrow.invert' 'cons'@)
 uncons :: [a] <-> Maybe (a, [a])
 uncons = invert cons
+
+-- |Convert between @('Just' head, tail)@ and the non-empty list @head:tail@, or @('Nothing', list)@ and @list@.
+consMaybe :: (Maybe a, [a]) <-> [a]
+consMaybe =
+  [biCase|
+    (Just a, l) <-> a:l
+    (Nothing, l) <-> l
+  |]
 
 -- |Combine 'L.replicate' and 'L.length' for unit lists.
 repLen :: Int <-> [()]
