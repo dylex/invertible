@@ -1,7 +1,7 @@
 -- |
 -- Bidirectional functions.
--- The type '<->' is the most useful, representing a bijective function between two types.
--- Bijections can be constructed from two functions with '<->' or from a set of Haskell cases using 'biCase'.
+-- The type 'Data.Bijection.Type.<->' is the most useful, representing a bijective function between two types.
+-- Bijections can be constructed from two functions with 'Control.BiArrow.<->' or from a set of Haskell cases using 'biCase'.
 --
 -- This and other modules in this package export functionality generally mirroring that provided by the base modules, but over bijections.  They are thus intended to be imported qualified, e.g.,:
 -- 
@@ -21,6 +21,7 @@ module Data.Bijection
   , module Data.Bijection.Functor
   , module Data.Bijection.List
   , module Data.Bijection.Maybe
+  , module Data.Bijection.Monoid
   , module Data.Bijection.Ord
   , module Data.Bijection.Tuple
   ) where
@@ -38,5 +39,6 @@ import Data.Bijection.Function
 import Data.Bijection.Functor
 import Data.Bijection.List
 import Data.Bijection.Maybe
+import Data.Bijection.Monoid
 import Data.Bijection.Ord
 import Data.Bijection.Tuple

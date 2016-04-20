@@ -45,6 +45,7 @@ library
     Data.Bijection.Functor
     Data.Bijection.List
     Data.Bijection.Maybe
+    Data.Bijection.Monoid
     Data.Bijection.Ord
     Data.Bijection.Tuple
     Data.Bijection.Prelude

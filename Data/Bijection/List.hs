@@ -36,7 +36,7 @@ cons =
     Nothing <-> []
   |]
 
--- |Convert between the non-empty list @head:tail@ and @'Just' (head, tail)@. (@'invert' 'cons'@)
+-- |Convert between the non-empty list @head:tail@ and @'Just' (head, tail)@. (@'Control.BiArrow.inv' 'cons'@)
 uncons :: [a] <-> Maybe (a, [a])
 uncons = invert cons
 

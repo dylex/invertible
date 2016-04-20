@@ -24,12 +24,12 @@ infix 2 <->
 --
 -- Instances should satisfy the following laws:
 --
---  * @f1 <-> g2 >>> g1 <-> f2 = (f1 >>> g1) <-> (f2 >>> g2)@
---  * @first (f <-> g) = f *** id <-> g *** id@
---  * @first h >>> id *** f <-> id *** g = id *** f <-> id *** g >>> first h@
+--  * @f1 \<-\> g2 >>> g1 \<-\> f2 = (f1 >>> g1) \<-\> (f2 >>> g2)@
+--  * @first (f \<-\> g) = f *** id \<-\> g *** id@
+--  * @first h >>> id *** f \<-\> id *** g = id *** f \<-\> id *** g >>> first h@
 --  * @first (first f) >>> assoc = assoc >>> first f@
 --
--- where @assoc = ['Data.Isomorphism.TH.isoCase'|((x,y),z) <-> (x,(y,z))|]@
+-- where @assoc = ['Data.Bijection.TH.biCase'|((x,y),z) \<-\> (x,(y,z))|]@
 --
 -- Although this is not, strictly speaking, a subclass of 'Arrow' as it is often impossible to define 'arr'), this is done in the paper because \"conceptually bi-arrows form an extension of the arrow class. Moreover, it allows us to use bi-arrows as normal arrows.\"
 class Arrow a => BiArrow a where
@@ -54,18 +54,18 @@ involve f = f <-> f
 infixr 1 ^^>>, >>^^
 infixr 1 ^^<<, <<^^
 
--- | Precomposition with a pure function.
+-- | Precomposition with a pure bijection.
 (^^>>) :: BiArrow a => (b <-> c) -> a c d -> a b d
 f ^^>> a = biarr f >>> a
 
--- | Postcomposition with a pure function.
+-- | Postcomposition with a pure bijection.
 (>>^^) :: BiArrow a => a b c -> (c <-> d) -> a b d
 a >>^^ f = a >>> biarr f
 
--- | Precomposition with a pure function (right-to-left variant).
+-- | Precomposition with a pure bijection (right-to-left variant).
 (<<^^) :: BiArrow a => a c d -> (b <-> c) -> a b d
 a <<^^ f = a <<< biarr f
 
--- | Postcomposition with a pure function (right-to-left variant).
+-- | Postcomposition with a pure bijection (right-to-left variant).
 (^^<<) :: BiArrow a => (c <-> d) -> a b c -> a b d
 f ^^<< a = biarr f <<< a
