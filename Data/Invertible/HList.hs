@@ -1,7 +1,7 @@
 -- |
 -- Bidirectional version of "Data.HList.HList".
 {-# LANGUAGE DataKinds, FlexibleContexts #-}
-module Data.Bijection.HList
+module Data.Invertible.HList
   ( hCons
   , hReverse
   , hReverse_
@@ -12,8 +12,8 @@ module Data.Bijection.HList
 import qualified Data.HList.HList as HL
 import Data.Proxy (Proxy(..))
 
-import Data.Bijection.Type
-import Data.Bijection.TH
+import Data.Invertible.Bijection
+import Data.Invertible.TH
 
 -- |(De)construct an list from a head and tail.
 hCons :: (a, HL.HList l) <-> HL.HList (a ': l)

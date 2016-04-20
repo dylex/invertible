@@ -4,7 +4,7 @@
 --
 --  * Artem Alimarine, et al. /There and Back Again: Arrows for Invertible Programming/. Haskell '05. <http://citeseer.ist.psu.edu/alimarine05there.html>
 --
-module Control.BiArrow
+module Control.Invertible.BiArrow
   ( BiArrow(..)
   , biarr
   , involve
@@ -16,7 +16,7 @@ module Control.BiArrow
 
 import Control.Arrow
 
-import Data.Bijection.Type
+import Data.Invertible.Bijection
 
 infix 2 <->
 
@@ -25,11 +25,13 @@ infix 2 <->
 -- Instances should satisfy the following laws:
 --
 --  * @f1 \<-\> g2 >>> g1 \<-\> f2 = (f1 >>> g1) \<-\> (f2 >>> g2)@
+--  * @invert (invert f) = f@
+--  * @invert (f \<-\> g) = g \<-\> f@
 --  * @first (f \<-\> g) = f *** id \<-\> g *** id@
 --  * @first h >>> id *** f \<-\> id *** g = id *** f \<-\> id *** g >>> first h@
 --  * @first (first f) >>> assoc = assoc >>> first f@
 --
--- where @assoc = ['Data.Bijection.TH.biCase'|((x,y),z) \<-\> (x,(y,z))|]@
+-- where @assoc = ['Data.Invertible.TH.biCase'|((x,y),z) \<-\> (x,(y,z))|]@
 --
 -- Although this is not, strictly speaking, a subclass of 'Arrow' as it is often impossible to define 'arr'), this is done in the paper because \"conceptually bi-arrows form an extension of the arrow class. Moreover, it allows us to use bi-arrows as normal arrows.\"
 class Arrow a => BiArrow a where
@@ -37,11 +39,11 @@ class Arrow a => BiArrow a where
   -- The intention is that these functions are each other's inverse.
   (<->) :: (b -> c) -> (c -> b) -> a b c
   -- |Inverse: reverse the direction of a bidirectional arrow.
-  inv :: a b c -> a c b
+  invert :: a b c -> a c b
 
 instance Arrow a => BiArrow (Bijection a) where
   f <-> g = arr f :<->: arr g
-  inv (f :<->: g) = g :<->: f
+  invert (f :<->: g) = g :<->: f
 
 -- |Lift a bidirectional function to an arbitrary arrow using '<->'.
 biarr :: BiArrow a => (b <-> c) -> a b c

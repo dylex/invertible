@@ -1,10 +1,10 @@
 -- |
 -- Use bijections on 'Invariant' functors from "Data.Functor.Invariant".
-module Data.Bijection.Invariant
+module Data.Invertible.Invariant
   ( invmap
   ) where
 
-import Data.Bijection.Type
+import Data.Invertible.Bijection
 import qualified Data.Functor.Invariant as I
 
 -- |Apply an isomorphism over an 'Invariant' using 'I.invmap'.

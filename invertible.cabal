@@ -1,6 +1,6 @@
 name:                invertible
 version:             0.1
-synopsis:            Bidirectional arrows, bijective functions, and invariant functors
+synopsis:            bidirectional arrows, bijective functions, and invariant functors
 description:         
   Representations and operations for bidirectional arrows (total isomorphisms: an
   arrow paired with its inverse).  Classes for invariant functors and monoidal
@@ -12,7 +12,7 @@ maintainer:          dylan@dylex.net
 copyright:           2016
 category:            Data, Control
 build-type:          Simple
-cabal-version:       >=1.20
+cabal-version:       >=1.10
 
 flag semigroupoids
   description: Support the semigroupoids package
@@ -31,27 +31,27 @@ flag TypeCompose
 
 library
   other-modules:     
-    Data.Bijection.Internal
+    Data.Invertible.Internal
   exposed-modules:     
-    Control.BiArrow
-    Data.Bijection.Type
-    Data.Bijection.TH
-    Data.Bijection.Bits
-    Data.Bijection.Bool
-    Data.Bijection.Coerce
-    Data.Bijection.Complex
-    Data.Bijection.Either
-    Data.Bijection.Function
-    Data.Bijection.Functor
-    Data.Bijection.List
-    Data.Bijection.Maybe
-    Data.Bijection.Monoid
-    Data.Bijection.Ord
-    Data.Bijection.Tuple
-    Data.Bijection.Prelude
-    Data.Bijection
-    Control.Invariant.Functor
-    Control.Invariant.Monoidal
+    Data.Invertible.Bijection
+    Data.Invertible.TH
+    Data.Invertible.Bits
+    Data.Invertible.Bool
+    Data.Invertible.Coerce
+    Data.Invertible.Complex
+    Data.Invertible.Either
+    Data.Invertible.Function
+    Data.Invertible.Functor
+    Data.Invertible.List
+    Data.Invertible.Maybe
+    Data.Invertible.Monoid
+    Data.Invertible.Ord
+    Data.Invertible.Tuple
+    Data.Invertible.Prelude
+    Data.Invertible
+    Control.Invertible.BiArrow
+    Control.Invertible.Functor
+    Control.Invertible.Monoidal
 
   build-depends:       
     base >= 4.8 && <5,
@@ -62,22 +62,22 @@ library
   ghc-options: -Wall
 
   if flag(semigroupoids)
-    exposed-modules: Data.Bijection.Semigroupoid
+    exposed-modules: Data.Invertible.Semigroupoid
     build-depends: semigroupoids >= 4
 
   if flag(invariant)
-    exposed-modules: Data.Bijection.Invariant
+    exposed-modules: Data.Invertible.Invariant
     build-depends: invariant
 
   if flag(lens)
-    exposed-modules: Data.Bijection.Lens
+    exposed-modules: Data.Invertible.Lens
     build-depends: lens == 4.*
 
   if flag(HList)
-    exposed-modules: Data.Bijection.HList
-    exposed-modules: Control.Invariant.Monoidal.HList
+    exposed-modules: Data.Invertible.HList
+    exposed-modules: Control.Invertible.Monoidal.HList
     build-depends: HList == 0.4.*
 
   if flag(TypeCompose)
-    exposed-modules: Data.Bijection.TypeCompose
-    build-depends: TypeCompose >= 0.3 (Data.Bijection as TypeCompose.Data.Bijection)
+    exposed-modules: Data.Invertible.TypeCompose
+    build-depends: TypeCompose >= 0.3

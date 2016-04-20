@@ -1,7 +1,7 @@
 -- |
 -- Bidirectional version of "Data.Function".
 {-# LANGUAGE Safe #-}
-module Data.Bijection.Function
+module Data.Invertible.Function
   ( id
   , (.)
   , consts
@@ -13,7 +13,7 @@ import Prelude hiding (id, (.), const, flip)
 import qualified Control.Category as C
 import qualified Data.Function as F
 
-import Data.Bijection.Type
+import Data.Invertible.Bijection
 
 -- |Identity bijection.
 id :: a <-> a

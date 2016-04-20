@@ -1,7 +1,7 @@
 -- |
 -- Bidirectional version of "Data.Maybe".
 {-# LANGUAGE Safe #-}
-module Data.Bijection.Maybe
+module Data.Invertible.Maybe
   ( isJust
   , isNothing
   , listToMaybe
@@ -11,9 +11,9 @@ module Data.Bijection.Maybe
 
 import qualified Data.Maybe as M
 
-import Data.Bijection.Type
-import Data.Bijection.TH
-import Data.Bijection.Internal
+import Data.Invertible.Bijection
+import Data.Invertible.TH
+import Data.Invertible.Internal
 
 -- |Convert between 'Just ()' and 'True' (see 'M.isJust').
 isJust :: Maybe () <-> Bool
@@ -23,7 +23,7 @@ isJust =
     Nothing <-> False
   |]
 
--- |Convert between 'Nothing' and 'True' (see 'M.isNothing'). (@'Data.Bijection.Bool.not' . 'isJust'@)
+-- |Convert between 'Nothing' and 'True' (see 'M.isNothing'). (@'Data.Invertible.Bool.not' . 'isJust'@)
 isNothing :: Maybe () <-> Bool
 isNothing = 
   [biCase|
@@ -31,11 +31,11 @@ isNothing =
     Just () <-> False
   |]
 
--- |Convert between (the head of) a (singleton) list and 'Maybe' (see 'M.listToMaybe'). (@'Control.BiArrow.inv' 'maybeToList'@)
+-- |Convert between (the head of) a (singleton) list and 'Maybe' (see 'M.listToMaybe'). (@'Control.Invertible.BiArrow.inv' 'maybeToList'@)
 listToMaybe :: [a] <-> Maybe a
 listToMaybe = M.listToMaybe :<->: M.maybeToList
 
--- |Convert between 'Maybe' and a (singleton) list (see 'M.maybeToList'). (@'Control.BiArrow.inv' 'listToMaybe'@)
+-- |Convert between 'Maybe' and a (singleton) list (see 'M.maybeToList'). (@'Control.Invertible.BiArrow.inv' 'listToMaybe'@)
 maybeToList :: Maybe a <-> [a]
 maybeToList = invert listToMaybe
 

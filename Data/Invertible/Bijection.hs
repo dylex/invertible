@@ -1,7 +1,7 @@
 -- |
 -- The base representation for bidirectional arrows (bijections).
 {-# LANGUAGE Trustworthy, KindSignatures, FlexibleInstances, CPP #-}
-module Data.Bijection.Type
+module Data.Invertible.Bijection
   ( Bijection(..)
   , type (<->)
   ) where

@@ -1,7 +1,7 @@
 -- |
 -- Bidirectional version of "Data.List" and other operations over lists.
 {-# LANGUAGE Safe #-}
-module Data.Bijection.List
+module Data.Invertible.List
   ( cons
   , uncons
   , repLen
@@ -24,9 +24,9 @@ import Prelude hiding (map, reverse, zip, zip3, unzip, zipWith, lines, words)
 import Control.Arrow ((***))
 import qualified Data.List as L
 
-import Data.Bijection.Type
-import Data.Bijection.TH
-import Data.Bijection.Internal
+import Data.Invertible.Bijection
+import Data.Invertible.TH
+import Data.Invertible.Internal
 
 -- |Convert between @'Just' (head, tail)@ and the non-empty list @head:tail@.
 cons :: Maybe (a, [a]) <-> [a]
@@ -36,7 +36,7 @@ cons =
     Nothing <-> []
   |]
 
--- |Convert between the non-empty list @head:tail@ and @'Just' (head, tail)@. (@'Control.BiArrow.inv' 'cons'@)
+-- |Convert between the non-empty list @head:tail@ and @'Just' (head, tail)@. (@'Control.Invertible.BiArrow.inv' 'cons'@)
 uncons :: [a] <-> Maybe (a, [a])
 uncons = invert cons
 

@@ -3,7 +3,7 @@
 -- 
 -- This roughly corresponds to "Control.Applicative", but exposes a non-overlapping API so can be imported unqualified.  It does, however, use operators similar to those provided by contravariant.
 {-# LANGUAGE Safe, FlexibleInstances #-}
-module Control.Invariant.Monoidal
+module Control.Invertible.Monoidal
   ( -- * Functor
     (>$<)
   -- * Monoidal
@@ -31,13 +31,13 @@ module Control.Invariant.Monoidal
 import Prelude hiding (Functor(..), fst, snd, id)
 import Control.Arrow ((&&&), (***))
 
-import Data.Bijection.Type
-import Data.Bijection.Prelude (id)
-import Data.Bijection.Either (lft)
-import Data.Bijection.Tuple
-import Data.Bijection.List (cons)
-import Data.Bijection.Maybe (fromMaybe)
-import Control.Invariant.Functor
+import Data.Invertible.Bijection
+import Data.Invertible.Prelude (id)
+import Data.Invertible.Either (lft)
+import Data.Invertible.Tuple
+import Data.Invertible.List (cons)
+import Data.Invertible.Maybe (fromMaybe)
+import Control.Invertible.Functor
 
 -- |Another synonym for 'fmap' to match other operators in this module.
 (>$<) :: Functor f => a <-> b -> f a -> f b

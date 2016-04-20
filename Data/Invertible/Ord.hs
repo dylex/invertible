@@ -1,12 +1,12 @@
 -- |
 -- Bidirectional operations over 'Ordering'.
 {-# LANGUAGE Safe #-}
-module Data.Bijection.Ord
+module Data.Invertible.Ord
   ( down
   ) where
 
-import Data.Bijection.Type
-import Data.Bijection.TH
+import Data.Invertible.Bijection
+import Data.Invertible.TH
 
 -- |Invert an 'Ordering' (see 'Data.Ord.Down').
 down :: Ordering <-> Ordering

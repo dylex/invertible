@@ -1,15 +1,15 @@
 -- |
 -- Bidirectional version of "Data.Bool".
 {-# LANGUAGE Safe #-}
-module Data.Bijection.Bool
+module Data.Invertible.Bool
   ( not
   ) where
 
 import Prelude hiding (not)
 import qualified Data.Bool as B
 
-import Data.Bijection.Type
-import Data.Bijection.Internal
+import Data.Invertible.Bijection
+import Data.Invertible.Internal
 
 -- |Boolean 'B.not'.
 not :: Bool <-> Bool

@@ -1,7 +1,7 @@
 -- |
 -- Bidirectional transforms for "Data.Monoid".
 {-# LANGUAGE Safe #-}
-module Data.Bijection.Monoid
+module Data.Invertible.Monoid
   ( BiEndo(..)
   , dual
   , endo
@@ -19,15 +19,8 @@ import Prelude hiding (fmap, (<$>), all, any, sum, product, last)
 import qualified Control.Category as C
 import Data.Monoid
 
-import Data.Bijection.Type
-import Data.Bijection.TH
-
--- | The monoid of endomorphisms under composition.
-newtype BiEndo a = BiEndo { appBiEndo :: a <-> a }
-
-instance Monoid (BiEndo a) where
-  mempty = BiEndo C.id
-  BiEndo f `mappend` BiEndo g = BiEndo (f C.. g)
+import Data.Invertible.Bijection
+import Data.Invertible.TH
 
 -- |(Un)wrap the 'Dual' monoid.
 dual :: a <-> Dual a
@@ -36,6 +29,13 @@ dual = [biCase|a <-> Dual a|]
 -- |(Un)wrap the 'Endo' monoid.
 endo :: (a -> a) <-> Endo a
 endo = [biCase|a <-> Endo a|]
+
+-- | The monoid of endomorphisms under composition.
+newtype BiEndo a = BiEndo { appBiEndo :: a <-> a }
+
+instance Monoid (BiEndo a) where
+  mempty = BiEndo C.id
+  BiEndo f `mappend` BiEndo g = BiEndo (f C.. g)
 
 -- |(Un)wrap the 'BiEndo' monoid.
 biEndo :: (a <-> a) <-> BiEndo a

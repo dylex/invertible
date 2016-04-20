@@ -1,7 +1,7 @@
 -- |
 -- Bidirectional version of "Data.Tuple" and other operations over nested tuples.
 {-# LANGUAGE Safe #-}
-module Data.Bijection.Tuple
+module Data.Invertible.Tuple
   ( fst
   , snd
   , curry
@@ -18,8 +18,8 @@ module Data.Bijection.Tuple
 import Prelude hiding (fst, snd, curry, uncurry)
 import qualified Data.Tuple as T
 
-import Data.Bijection.Type
-import Data.Bijection.TH
+import Data.Invertible.Bijection
+import Data.Invertible.TH
 
 -- |Extract the 'T.fst' component of a pair.
 fst :: (a, ()) <-> a

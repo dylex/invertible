@@ -1,7 +1,7 @@
 -- |
 -- Convenient construction of bidirectional functions using case-like syntax.
 {-# LANGUAGE TemplateHaskell, Trustworthy #-}
-module Data.Bijection.TH
+module Data.Invertible.TH
   ( biCase
   ) where
 
@@ -17,7 +17,7 @@ import Language.Haskell.Meta.Parse (parsePat)
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
 
-import Data.Bijection.Type
+import Data.Invertible.Bijection
 
 split :: Eq a => [a] -> [a] -> [[a]]
 split _ [] = []

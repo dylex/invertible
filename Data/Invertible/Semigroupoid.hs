@@ -1,11 +1,11 @@
 -- |
 -- Convert bijections to and from semigroupoids 'Iso'.
-module Data.Bijection.Semigroupoid
+module Data.Invertible.Semigroupoid
   ( toIso
   , fromIso
   ) where
 
-import Data.Bijection.Type
+import Data.Invertible.Bijection
 import qualified Data.Isomorphism as S
 
 -- |Convert a bijection to a semigroupoid isomorphism.

@@ -1,7 +1,7 @@
 -- |
 -- Bidirectional version of "Data.Either".
 {-# LANGUAGE Safe #-}
-module Data.Bijection.Either
+module Data.Invertible.Either
   ( switch
   , isLeft
   , isRight
@@ -11,8 +11,8 @@ module Data.Bijection.Either
 
 import Prelude
 
-import Data.Bijection.Type
-import Data.Bijection.TH
+import Data.Invertible.Bijection
+import Data.Invertible.TH
 
 -- |Convert between 'Left' and 'Right'.
 switch :: Either a b <-> Either b a
@@ -30,7 +30,7 @@ isLeft =
     Right () <-> False
   |]
 
--- |Convert between 'Right' and 'True' (see 'Data.Either.isRight'). (@'Data.Bijection.Bool.not' . 'isLeft'@) 
+-- |Convert between 'Right' and 'True' (see 'Data.Either.isRight'). (@'Data.Invertible.Bool.not' . 'isLeft'@) 
 isRight :: Either () () <-> Bool
 isRight =
   [biCase|

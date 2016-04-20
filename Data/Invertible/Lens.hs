@@ -1,12 +1,12 @@
 -- |
 -- Convert bijections to and from lens isomorphisms in "Control.Lens.Iso".
 {-# LANGUAGE RankNTypes #-}
-module Data.Bijection.Lens
+module Data.Invertible.Lens
   ( toIso
   , unIso
   ) where
 
-import Data.Bijection.Type
+import Data.Invertible.Bijection
 import qualified Control.Lens.Iso as L
 
 -- |Convert an isomorphism to a lens.

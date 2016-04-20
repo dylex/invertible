@@ -1,7 +1,7 @@
 -- |
 -- Bidirectional version of "Data.Complex".
 {-# LANGUAGE Safe #-}
-module Data.Bijection.Complex
+module Data.Invertible.Complex
   ( complex
   , polar
   , conjugate
@@ -9,9 +9,9 @@ module Data.Bijection.Complex
 
 import qualified Data.Complex as C
 
-import Data.Bijection.Type
-import Data.Bijection.Internal
-import Data.Bijection.TH
+import Data.Invertible.Bijection
+import Data.Invertible.Internal
+import Data.Invertible.TH
 
 -- |Convert between 'Complex' numbers and rectangular form.
 complex :: (a, a) <-> C.Complex a
