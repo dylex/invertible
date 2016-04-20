@@ -1,7 +1,7 @@
 -- |
--- Versions of functions from "Data.Complex" as isomorphisms.
+-- Bidirectional version of "Data.Complex".
 {-# LANGUAGE Safe #-}
-module Data.Isomorphism.Complex
+module Data.Bijection.Complex
   ( complex
   , polar
   , conjugate
@@ -9,13 +9,13 @@ module Data.Isomorphism.Complex
 
 import qualified Data.Complex as C
 
-import Data.Isomorphism.Type
-import Data.Isomorphism.Internal
-import Data.Isomorphism.TH
+import Data.Bijection.Type
+import Data.Bijection.Internal
+import Data.Bijection.TH
 
 -- |Convert between 'Complex' numbers and rectangular form.
 complex :: (a, a) <-> C.Complex a
-complex = [isoCase|(r, i) <-> r C.:+ i|]
+complex = [biCase|(r, i) <-> r C.:+ i|]
 
 -- |Convert between complex numbers and 'C.polar' form.
 polar :: RealFloat a => (a, a) <-> C.Complex a

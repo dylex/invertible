@@ -1,7 +1,7 @@
 -- |
--- Versions of functions from "Data.Maybe" as isomorphisms.
+-- Bidirectional version of "Data.Maybe".
 {-# LANGUAGE Safe #-}
-module Data.Isomorphism.Maybe
+module Data.Bijection.Maybe
   ( isJust
   , isNothing
   , listToMaybe
@@ -11,22 +11,22 @@ module Data.Isomorphism.Maybe
 
 import qualified Data.Maybe as M
 
-import Data.Isomorphism.Type
-import Data.Isomorphism.TH
-import Data.Isomorphism.Internal
+import Data.Bijection.Type
+import Data.Bijection.TH
+import Data.Bijection.Internal
 
 -- |Convert between 'Just ()' and 'True' (see 'M.isJust').
 isJust :: Maybe () <-> Bool
 isJust =
-  [isoCase|
+  [biCase|
     Just () <-> True
     Nothing <-> False
   |]
 
--- |Convert between 'Nothing' and 'True' (see 'M.isNothing'). (@'Data.Isomorphism.Bool.not' . 'isJust'@)
+-- |Convert between 'Nothing' and 'True' (see 'M.isNothing'). (@'Data.Bijection.Bool.not' . 'isJust'@)
 isNothing :: Maybe () <-> Bool
 isNothing = 
-  [isoCase|
+  [biCase|
     Nothing <-> True
     Just () <-> False
   |]
@@ -39,6 +39,6 @@ listToMaybe = M.listToMaybe :<->: M.maybeToList
 maybeToList :: Maybe a <-> [a]
 maybeToList = invert listToMaybe
 
--- |Convert between 'Nothing' and a default value, or 'Just' and its value (not a true isomorphism).
+-- |Convert between 'Nothing' and a default value, or 'Just' and its value (not a true bijection).
 fromMaybe :: Eq a => a -> Maybe a <-> a
 fromMaybe d = M.fromMaybe d :<->: \a -> if a == d then Nothing else Just a

@@ -1,7 +1,7 @@
 -- |
--- Versions of functions from "Data.Functor" over isomorphisms.
+-- Bidirectional version of "Data.Functor".
 {-# LANGUAGE Safe #-}
-module Data.Isomorphism.Functor
+module Data.Bijection.Functor
   ( fmap
   , (<$>)
   , identity
@@ -11,10 +11,10 @@ import Prelude hiding (fmap, (<$>))
 import qualified Data.Functor as F
 import Data.Functor.Identity (Identity(..))
 
-import Data.Isomorphism.Type
-import Data.Isomorphism.TH
+import Data.Bijection.Type
+import Data.Bijection.TH
 
--- |Lift both sides of an isomorphism over a functor using 'F.fmap'.
+-- |Lift both sides of an bijection over a functor using 'F.fmap'.
 fmap :: Functor f => a <-> b -> f a <-> f b
 fmap (f :<->: g) = F.fmap f :<->: F.fmap g
 
@@ -25,4 +25,4 @@ infixl 4 <$>
 
 -- |Convert the 'Identity' functor.
 identity :: a <-> Identity a
-identity = [isoCase|a <-> Identity a|]
+identity = [biCase|a <-> Identity a|]

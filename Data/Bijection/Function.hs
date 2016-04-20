@@ -1,7 +1,7 @@
 -- |
--- Versions of functions from "Data.Function" as isomorphisms.
+-- Bidirectional version of "Data.Function".
 {-# LANGUAGE Safe #-}
-module Data.Isomorphism.Function
+module Data.Bijection.Function
   ( id
   , (.)
   , consts
@@ -13,22 +13,22 @@ import Prelude hiding (id, (.), const, flip)
 import qualified Control.Category as C
 import qualified Data.Function as F
 
-import Data.Isomorphism.Type
+import Data.Bijection.Type
 
--- |Identity isomorphism.
+-- |Identity bijection.
 id :: a <-> a
 id = C.id
 
--- |Isomorphism composition
+-- |Bijection composition
 (.) :: (b <-> c) -> (a <-> b) -> a <-> c
 (.) = (C..)
 infixr 9 .
 
--- |Bidirectional constant function (not a true isomorphism).
+-- |Bidirectional constant function (not a true bijection).
 consts :: a -> b -> a <-> b
 consts a b = F.const b :<->: F.const a
 
--- |Convert between '()' and a constant (not a true isomorphism).
+-- |Convert between '()' and a constant (not a true bijection).
 const :: a -> () <-> a
 const = consts ()
 

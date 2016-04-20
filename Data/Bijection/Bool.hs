@@ -1,15 +1,15 @@
 -- |
--- Versions of functions from "Data.Bool" as isomorphisms.
+-- Bidirectional version of "Data.Bool".
 {-# LANGUAGE Safe #-}
-module Data.Isomorphism.Bool
+module Data.Bijection.Bool
   ( not
   ) where
 
 import Prelude hiding (not)
 import qualified Data.Bool as B
 
-import Data.Isomorphism.Type
-import Data.Isomorphism.Internal
+import Data.Bijection.Type
+import Data.Bijection.Internal
 
 -- |Boolean 'B.not'.
 not :: Bool <-> Bool

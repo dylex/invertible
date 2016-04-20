@@ -1,7 +1,7 @@
 -- |
--- Versions of functions from "Data.Either" as isomorphisms.
+-- Bidirectional version of "Data.Either".
 {-# LANGUAGE Safe #-}
-module Data.Isomorphism.Either
+module Data.Bijection.Either
   ( switch
   , isLeft
   , isRight
@@ -11,13 +11,13 @@ module Data.Isomorphism.Either
 
 import Prelude
 
-import Data.Isomorphism.Type
-import Data.Isomorphism.TH
+import Data.Bijection.Type
+import Data.Bijection.TH
 
 -- |Convert between 'Left' and 'Right'.
 switch :: Either a b <-> Either b a
 switch =
-  [isoCase|
+  [biCase|
     Left a <-> Right a
     Right a <-> Left a
   |]
@@ -25,15 +25,15 @@ switch =
 -- |Convert between 'Left' and 'True' (see 'Data.Either.isLeft').
 isLeft :: Either () () <-> Bool
 isLeft =
-  [isoCase|
+  [biCase|
     Left () <-> True
     Right () <-> False
   |]
 
--- |Convert between 'Right' and 'True' (see 'Data.Either.isRight'). (@'Data.Isomorphism.Bool.not' . 'isLeft'@) 
+-- |Convert between 'Right' and 'True' (see 'Data.Either.isRight'). (@'Data.Bijection.Bool.not' . 'isLeft'@) 
 isRight :: Either () () <-> Bool
 isRight =
-  [isoCase|
+  [biCase|
     Right () <-> True
     Left () <-> False
   |]
@@ -41,7 +41,7 @@ isRight =
 -- |Convert between 'Left' and 'Just'.
 lft :: Either a () <-> Maybe a
 lft =
-  [isoCase|
+  [biCase|
     Left a <-> Just a
     Right () <-> Nothing
   |]
@@ -49,7 +49,7 @@ lft =
 -- |Convert between 'Right and 'Just'.
 rgt :: Either () a <-> Maybe a
 rgt =
-  [isoCase|
+  [biCase|
     Left () <-> Nothing
     Right a <-> Just a
   |]

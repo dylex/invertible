@@ -1,7 +1,7 @@
 -- |
--- Isomorphisms that operate over lists.
+-- Bidirectional version of "Data.List" and other operations over lists.
 {-# LANGUAGE Safe #-}
-module Data.Isomorphism.List
+module Data.Bijection.List
   ( cons
   , uncons
   , repLen
@@ -24,14 +24,14 @@ import Prelude hiding (map, reverse, zip, zip3, unzip, zipWith, lines, words)
 import Control.Arrow ((***))
 import qualified Data.List as L
 
-import Data.Isomorphism.Type
-import Data.Isomorphism.TH
-import Data.Isomorphism.Internal
+import Data.Bijection.Type
+import Data.Bijection.TH
+import Data.Bijection.Internal
 
 -- |Convert between @'Just' (head, tail)@ and the non-empty list @head:tail@.
 cons :: Maybe (a, [a]) <-> [a]
 cons =
-  [isoCase|
+  [biCase|
     Just (a, l) <-> a:l
     Nothing <-> []
   |]
@@ -44,7 +44,7 @@ uncons = invert cons
 repLen :: Int <-> [()]
 repLen = (`L.replicate` ()) :<->: L.length
 
--- |Apply an isomorphism over a list using 'L.map'.
+-- |Apply a bijection over a list using 'L.map'.
 map :: (a <-> b) -> [a] <-> [b]
 map (f :<->: g) = L.map f :<->: L.map g
 
@@ -80,7 +80,7 @@ zip6 = (\(a,b,c,d,e,f) -> L.zip6 a b c d e f) :<->: L.unzip6
 zip7 :: ([a], [b], [c], [d], [e], [f], [g]) <-> [(a, b, c, d, e, f, g)]
 zip7 = (\(a,b,c,d,e,f,g) -> L.zip7 a b c d e f g) :<->: L.unzip7
 
--- |'L.zipWith' two lists together using an isomorphism.
+-- |'L.zipWith' two lists together using a bijection.
 zipWith :: (a, b) <-> c -> ([a], [b]) <-> [(c)]
 zipWith (f :<->: g) = uncurry (L.zipWith (curry f)) :<->: L.unzip . L.map g
 

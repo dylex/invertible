@@ -1,17 +1,17 @@
 -- |
--- Isomorphisms that operate over 'Ordering'.
+-- Bidirectional operations over 'Ordering'.
 {-# LANGUAGE Safe #-}
-module Data.Isomorphism.Ord
+module Data.Bijection.Ord
   ( down
   ) where
 
-import Data.Isomorphism.Type
-import Data.Isomorphism.TH
+import Data.Bijection.Type
+import Data.Bijection.TH
 
 -- |Invert an 'Ordering' (see 'Data.Ord.Down').
 down :: Ordering <-> Ordering
 down =
-  [isoCase|
+  [biCase|
     LT <-> GT
     EQ <-> EQ
     GT <-> LT

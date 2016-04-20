@@ -1,10 +1,9 @@
 -- |
--- The \"Prelude\" for isomorphism, which re-exports various isomorphisms similar to functions from "Prelude".
+-- The bidirectional \"Prelude\", which re-exports various bijections similar to functions from "Prelude".
 -- Most \"un\"-functions are left out for obvious reasons.
 {-# LANGUAGE Safe #-}
-module Data.Isomorphism.Prelude
-  ( module Data.Isomorphism.Type
-  , module Data.Isomorphism.Internal
+module Data.Bijection.Prelude
+  ( module Data.Bijection.Type
 
   , enum
 
@@ -31,13 +30,12 @@ module Data.Isomorphism.Prelude
 
 import Prelude hiding (not, id, (.), const, flip, fmap, (<$>), fst, snd, curry, uncurry, map, reverse, zip, zip3, unzip, zipWith, lines, words)
 
-import Data.Isomorphism.Type
-import Data.Isomorphism.Internal
-import Data.Isomorphism.Bool
-import Data.Isomorphism.Function
-import Data.Isomorphism.Functor
-import Data.Isomorphism.Tuple
-import Data.Isomorphism.List
+import Data.Bijection.Type
+import Data.Bijection.Bool
+import Data.Bijection.Function
+import Data.Bijection.Functor
+import Data.Bijection.Tuple
+import Data.Bijection.List
 
 -- |Convert between an 'Int' and an 'Enum' with 'P.toEnum' and 'P.fromEnum'.
 enum :: Enum a => Int <-> a

@@ -1,7 +1,7 @@
 -- |
--- Isomorphisms that operate over HLists.
+-- Bidirectional version of "Data.HList.HList".
 {-# LANGUAGE DataKinds, FlexibleContexts #-}
-module Data.Isomorphism.HList
+module Data.Bijection.HList
   ( hCons
   , hReverse
   , hReverse_
@@ -12,12 +12,12 @@ module Data.Isomorphism.HList
 import qualified Data.HList.HList as HL
 import Data.Proxy (Proxy(..))
 
-import Data.Isomorphism.Type
-import Data.Isomorphism.TH
+import Data.Bijection.Type
+import Data.Bijection.TH
 
 -- |(De)construct an list from a head and tail.
 hCons :: (a, HL.HList l) <-> HL.HList (a ': l)
-hCons = [isoCase|(a, l) <-> HL.HCons a l|]
+hCons = [biCase|(a, l) <-> HL.HCons a l|]
 
 -- |'HL.hReverse' the order of a list.
 hReverse :: (HL.HReverse a b, HL.HReverse b a) => HL.HList a <-> HL.HList b

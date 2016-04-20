@@ -8,7 +8,7 @@ module Control.Invariant.Monoidal.HList
 import Prelude hiding (Functor(..), (<$>), fst, snd, id)
 import qualified Data.HList.HList as HL
 
-import Data.Isomorphism.HList
+import Data.Bijection.HList
 import Control.Invariant.Monoidal
 
 -- |'HL.HCons' two monoidal functors.

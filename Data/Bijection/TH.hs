@@ -1,8 +1,8 @@
 -- |
--- Convenient construction of function isomorphisms using case-like syntax.
+-- Convenient construction of bidirectional functions using case-like syntax.
 {-# LANGUAGE TemplateHaskell, Trustworthy #-}
-module Data.Isomorphism.TH
-  ( isoCase
+module Data.Bijection.TH
+  ( biCase
   ) where
 
 import Control.Arrow (second)
@@ -17,7 +17,7 @@ import Language.Haskell.Meta.Parse (parsePat)
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
 
-import Data.Isomorphism.Type
+import Data.Bijection.Type
 
 split :: Eq a => [a] -> [a] -> [[a]]
 split _ [] = []
@@ -30,7 +30,7 @@ patToPat :: TH.Pat -> TH.Pat
 patToPat = ptp . gmapT pta where
   pta :: Data a => a -> a
   pta = fromMaybe id $ cast patToPat
-  ptp (TH.ViewP e p) = TH.ViewP (TH.VarE 'isoTo `TH.AppE` e) p
+  ptp (TH.ViewP e p) = TH.ViewP (TH.VarE 'biTo `TH.AppE` e) p
   ptp p = p
 
 patToExp :: TH.Pat -> TH.Exp
@@ -49,42 +49,42 @@ patToExp TH.WildP = TH.VarE 'undefined
 patToExp (TH.RecP c f) = TH.RecConE c $ map (second patToExp) f
 patToExp (TH.ListP l) = TH.ListE $ map patToExp l
 patToExp (TH.SigP p t) = TH.SigE (patToExp p) t
-patToExp (TH.ViewP e p) = TH.VarE 'isoFrom `TH.AppE` e `TH.AppE` patToExp p
+patToExp (TH.ViewP e p) = TH.VarE 'biFrom `TH.AppE` e `TH.AppE` patToExp p
 
 parseP :: String -> TH.PatQ
 parseP s = either (fail . (++) ("Failed to parse pattern '" ++ s ++ "': ")) return $ parsePat s
 
-isoExp :: String -> TH.ExpQ
-isoExp = fmap ie . mapM ic . filter (not . all isSpace) . concatMap (split ";") . lines where
+biExp :: String -> TH.ExpQ
+biExp = fmap ie . mapM ic . filter (not . all isSpace) . concatMap (split ";") . lines where
   ie l = TH.InfixE (Just $ ce l) (TH.ConE '(:<->:)) (Just $ ce $ map swap l)
   ce [(p, e)] = TH.LamE [patToPat p] $ patToExp e
   ce l = TH.LamCaseE [ TH.Match (patToPat p) (TH.NormalB $ patToExp e) [] | (p, e) <- l ]
   ic s
     | [fs, gs] <- split "<->" s =
       liftM2 (,) (parseP fs) (parseP gs)
-    | otherwise = fail "each iso case must contain exactly one '<->'"
+    | otherwise = fail "each bijection case must contain exactly one '<->'"
 
--- |Construct an expression representing an isomorphism based on a set of newline- or semicolon-separated cases.
+-- |Construct an expression representing a function bijection based on a set of newline- or semicolon-separated cases.
 -- Each case should be two pattern-expressions separated by @<->@.
 -- Each pattern-expression is a haskell pattern that can also be interpreted as an expression.
--- You can think of these as symmetric or bi-directional case expressions.
--- The result will be an isomorphism that is the combination of two lambdas, one with the cases intepreted forward, and one reverse.
+-- You can think of these as symmetric or bidirectional case expressions.
+-- The result will be a bijection that is the combination of two lambdas, one with the cases intepreted forward, and one reverse.
 -- For example:
 --
 -- > newtype T a = C a
--- > isoC :: T a <-> a
--- > isoC = [isoCase| C a <-> a |]
+-- > biC :: T a <-> a
+-- > biC = [biCase| C a <-> a |]
 --
 -- > isJust :: Maybe () <-> Bool
--- > isJust = [isoCase|
+-- > isJust = [biCase|
 -- >     Just () <-> True
 -- >     Nothing <-> False
 -- >   |]
 -- 
-isoCase :: QuasiQuoter
-isoCase = QuasiQuoter
-  { quoteExp = isoExp
-  , quoteType = const $ fail "iso not supported in types"
-  , quotePat = const $ fail "iso not supported in patterns"
-  , quoteDec = const $ fail "iso not supported in declarations"
+biCase :: QuasiQuoter
+biCase = QuasiQuoter
+  { quoteExp = biExp
+  , quoteType = const $ fail "biCase not supported in types"
+  , quotePat = const $ fail "biCase not supported in patterns"
+  , quoteDec = const $ fail "biCase not supported in declarations"
   }

@@ -31,12 +31,12 @@ module Control.Invariant.Monoidal
 import Prelude hiding (Functor(..), fst, snd, id)
 import Control.Arrow ((&&&), (***))
 
-import Data.Isomorphism.Type
-import Data.Isomorphism.Prelude (id)
-import Data.Isomorphism.Either (lft)
-import Data.Isomorphism.Tuple
-import Data.Isomorphism.List (cons)
-import Data.Isomorphism.Maybe (fromMaybe)
+import Data.Bijection.Type
+import Data.Bijection.Prelude (id)
+import Data.Bijection.Either (lft)
+import Data.Bijection.Tuple
+import Data.Bijection.List (cons)
+import Data.Bijection.Maybe (fromMaybe)
 import Control.Invariant.Functor
 
 -- |Another synonym for 'fmap' to match other operators in this module.
@@ -64,7 +64,7 @@ class Functor f => Monoidal f where
 
 infixl 4 >*, >*<, *<
 
--- |Lift an (uncurried) isomorphism into a monoidal functor.
+-- |Lift an (uncurried) bijection into a monoidal functor.
 liftI2 :: Monoidal f => ((a, b) <-> c) -> f a -> f b -> f c
 liftI2 f a b = f >$< (a >*< b)
 
@@ -104,7 +104,7 @@ infixr 3 >*<<, >*<<<, >*<<<<
 
 infix 3 >>*<<
 
-instance Monoidal (Isomorphism (->) ()) where
+instance Monoidal (Bijection (->) ()) where
   unit = id
   -- |Uses the 'Monoid' instance to combine '()'s.
   (ua :<->: au) >*< (ub :<->: bu) = ua &&& ub :<->: uncurry mappend . (au *** bu)
