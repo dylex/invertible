@@ -41,7 +41,8 @@ instance Category a => Category (Bijection a) where
   id = id :<->: id
   (f1 :<->: g1) . (f2 :<->: g2) = f1 . f2 :<->: g2 . g1
 
--- |'&&&' is first-biased, and uses only the left argument's 'biFrom'.
+-- |In order to use all the 'Arrow' functions, we make a partially broken instance, where 'arr' creates a bijection with a broken 'biFrom'. See note on 'Control.Invertible.BiArrow.BiArrow''.
+-- '&&&' is first-biased, and uses only the left argument's 'biFrom'.
 instance Arrow a => Arrow (Bijection a) where
   arr f = arr f :<->: arr (const (error "Bijection: arr has no inverse"))
   first (f :<->: g) = first f :<->: first g
@@ -74,4 +75,3 @@ instance Invariant (Bijection (->) b) where
 instance Invariant2 (Bijection (->)) where
   invmap2 f g = (.) ((. (g :<->: f)) .) . invmap
 #endif
-

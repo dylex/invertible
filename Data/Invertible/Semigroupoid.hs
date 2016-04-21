@@ -1,5 +1,5 @@
 -- |
--- Convert bijections to and from semigroupoids 'Iso'.
+-- Convert bijections to and from semigroupoids 'S.Iso'.
 module Data.Invertible.Semigroupoid
   ( toIso
   , fromIso

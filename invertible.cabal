@@ -31,6 +31,12 @@ flag HList
 flag TypeCompose
   description: Support the TypeCompose package
 
+flag Piso
+  description: Support the Piso package
+
+flag partial-isomorphisms
+  description: Support the partial-isomorphisms package
+
 library
   other-modules:     
     Data.Invertible.Internal
@@ -83,3 +89,11 @@ library
   if flag(TypeCompose)
     exposed-modules: Data.Invertible.TypeCompose
     build-depends: TypeCompose >= 0.3
+
+  if flag(Piso)
+    exposed-modules: Data.Invertible.Piso
+    build-depends: Piso
+
+  if flag(partial-isomorphisms)
+    exposed-modules: Data.Invertible.PartialIsomorphism
+    build-depends: partial-isomorphisms

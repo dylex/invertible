@@ -2,7 +2,7 @@
 -- Invariant monoidal functors.
 -- 
 -- This roughly corresponds to "Control.Applicative", but exposes a non-overlapping API so can be imported unqualified.  It does, however, use operators similar to those provided by contravariant.
-{-# LANGUAGE Safe, FlexibleInstances #-}
+{-# LANGUAGE CPP, Safe, FlexibleInstances #-}
 module Control.Invertible.Monoidal
   ( -- * Functor
     (>$<)
@@ -116,11 +116,6 @@ sequenceMaybesI (x:l) = liftI2 I.consMaybe x (sequenceMaybesI l)
 mapMaybeI :: Monoidal f => (a -> f (Maybe b)) -> [a] -> f [b]
 mapMaybeI = (sequenceMaybesI .) . map
 
-instance Monoidal (Bijection (->) ()) where
-  unit = I.id
-  -- |Uses the 'Monoid' instance to combine '()'s.
-  (ua :<->: au) >*< (ub :<->: bu) = ua &&& ub :<->: uncurry mappend . (au *** bu)
-
 -- |Monoidal functors that allow choice.
 class Monoidal f => MonoidalAlt f where
   -- |Associative binary choice.
@@ -139,3 +134,9 @@ defaulting a f = I.fromMaybe a >$< possible f
 -- |Repeatedly apply a monoidal functor until it fails.  Analogous to 'Control.Applicative.many'.
 while :: MonoidalAlt f => f a -> f [a]
 while f = I.cons >$< possible (f >*< while f)
+
+
+instance Monoidal (Bijection (->) ()) where
+  unit = I.id
+  -- |Uses the 'Monoid' instance to combine '()'s.
+  (ua :<->: au) >*< (ub :<->: bu) = ua &&& ub :<->: uncurry mappend . (au *** bu)

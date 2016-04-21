@@ -7,6 +7,6 @@ module Data.Invertible.Invariant
 import Data.Invertible.Bijection
 import qualified Data.Functor.Invariant as I
 
--- |Apply an isomorphism over an 'Invariant' using 'I.invmap'.
+-- |Apply a bijection over an 'I.Invariant' using 'I.invmap'.
 invmap :: I.Invariant f => a <-> b -> f a -> f b
 invmap (f :<->: g) = I.invmap f g

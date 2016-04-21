@@ -5,7 +5,7 @@
 -- 
 -- > import qualified Control.Invertible.Functor as Inv
 --
-{-# LANGUAGE Safe, FlexibleInstances #-}
+{-# LANGUAGE CPP, Safe, FlexibleInstances #-}
 module Control.Invertible.Functor
   ( Functor(..)
   , (<$>)
@@ -16,6 +16,9 @@ import Control.Arrow (Arrow)
 import Control.Category ((.))
 import Data.Monoid (Endo(..))
 
+#ifdef VERSION_semigroupoids
+import Data.Semigroupoid (Semigroupoid)
+#endif
 import Control.Invertible.BiArrow ((^^<<), invert)
 import Data.Invertible.Bijection
 import Data.Invertible.Monoid (BiEndo(..))
@@ -29,7 +32,11 @@ class Functor f where
 (<$>) = fmap
 infixl 4 <$>
 
-instance Arrow a => Functor (Bijection a b) where
+instance (
+#ifdef VERSION_semigroupoids
+    Semigroupoid a,
+#endif
+    Arrow a) => Functor (Bijection a b) where
   fmap = (^^<<)
 
 instance Functor Endo where
