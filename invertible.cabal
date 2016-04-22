@@ -1,7 +1,7 @@
 name:                invertible
 version:             0.1
 synopsis:            bidirectional arrows, bijective functions, and invariant functors
-description:         
+description:
   Representations and operations for bidirectional arrows (total isomorphisms: an
   arrow paired with its inverse).  Classes for invariant functors and monoidal
   functors.  Includes a number of useful bijections and operations, as well as
@@ -16,31 +16,27 @@ category:            Data, Control
 build-type:          Simple
 cabal-version:       >=1.10
 
-flag semigroupoids
-  description: Support the semigroupoids package
-
-flag invariant
-  description: Support the invariant package
-
-flag lens
-  description: Support the lens package
-
+flag arrows
+  description: Support the arrows package
 flag HList
   description: Support the HList package
-
+flag invariant
+  description: Support the invariant package
+flag lens
+  description: Support the lens package
+flag partial-isomorphisms
+  description: Support the partial-isomorphisms package
+flag Piso
+  description: Support the Piso package
+flag semigroupoids
+  description: Support the semigroupoids package
 flag TypeCompose
   description: Support the TypeCompose package
 
-flag Piso
-  description: Support the Piso package
-
-flag partial-isomorphisms
-  description: Support the partial-isomorphisms package
-
 library
-  other-modules:     
+  other-modules:
     Data.Invertible.Internal
-  exposed-modules:     
+  exposed-modules:
     Data.Invertible.Bijection
     Data.Invertible.TH
     Data.Invertible.Bits
@@ -61,7 +57,7 @@ library
     Control.Invertible.Functor
     Control.Invertible.Monoidal
 
-  build-depends:       
+  build-depends:
     base >= 4.8 && <5,
     haskell-src-meta == 0.6.*,
     template-haskell == 2.*
@@ -69,31 +65,27 @@ library
   default-extensions: TypeOperators, QuasiQuotes
   ghc-options: -Wall
 
-  if flag(semigroupoids)
-    exposed-modules: Data.Invertible.Semigroupoid
-    build-depends: semigroupoids >= 4
-
-  if flag(invariant)
-    exposed-modules: Data.Invertible.Invariant
-    build-depends: invariant
-
-  if flag(lens)
-    exposed-modules: Data.Invertible.Lens
-    build-depends: lens == 4.*
-
+  if flag(arrows)
+    build-depends: arrows
   if flag(HList)
     exposed-modules: Data.Invertible.HList
     exposed-modules: Control.Invertible.Monoidal.HList
     build-depends: HList == 0.4.*
-
-  if flag(TypeCompose)
-    exposed-modules: Data.Invertible.TypeCompose
-    build-depends: TypeCompose >= 0.3
-
-  if flag(Piso)
-    exposed-modules: Data.Invertible.Piso
-    build-depends: Piso
-
+  if flag(invariant)
+    exposed-modules: Data.Invertible.Invariant
+    build-depends: invariant
+  if flag(lens)
+    exposed-modules: Data.Invertible.Lens
+    build-depends: lens == 4.*
   if flag(partial-isomorphisms)
     exposed-modules: Data.Invertible.PartialIsomorphism
     build-depends: partial-isomorphisms
+  if flag(Piso)
+    exposed-modules: Data.Invertible.Piso
+    build-depends: Piso
+  if flag(semigroupoids)
+    exposed-modules: Data.Invertible.Semigroupoid
+    build-depends: semigroupoids >= 4
+  if flag(TypeCompose)
+    exposed-modules: Data.Invertible.TypeCompose
+    build-depends: TypeCompose >= 0.3

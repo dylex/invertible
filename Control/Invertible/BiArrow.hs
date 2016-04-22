@@ -37,6 +37,9 @@ import qualified Data.Bijection as TypeCompose
 import qualified Control.Isomorphism.Partial as Partial
 import qualified Control.Isomorphism.Partial.Unsafe as Partial
 #endif
+#ifdef VERSION_arrows
+import qualified Control.Arrow.Transformer.All as T
+#endif
 
 infix 2 <->
 
@@ -113,7 +116,7 @@ instance (Semigroupoid a, Arrow a) => BiArrow (Semigroupoid.Iso a) where
 #ifdef VERSION_semigroupoids
 -- |Poor orphans.  Please will someone adopt us?
 instance Semigroupoid a => Semigroupoid (TypeCompose.Bijection a) where
-  o (TypeCompose.Bi f1 g1) (TypeCompose.Bi f2 g2) = TypeCompose.Bi (o f1 f2) (o g2 g1)
+  TypeCompose.Bi f1 g1 `o` TypeCompose.Bi f2 g2 = TypeCompose.Bi (o f1 f2) (o g2 g1)
 -- |Poor orphans.  Please will someone adopt us?
 instance Semigroupoid a => Groupoid (TypeCompose.Bijection a) where
   inv = TypeCompose.inverse
@@ -136,4 +139,39 @@ instance Groupoid Partial.Iso where
 instance BiArrow Partial.Iso where
   f <-> g = Partial.Iso (Just . f) (Just . g)
   invert = Partial.inverse
+#endif
+
+#ifdef VERSION_arrows
+#ifdef VERSION_semigroupoids
+-- |Poor orphans.  Please will someone adopt us?
+instance Semigroupoid a => Semigroupoid (T.StateArrow s a) where
+  T.StateArrow f `o` T.StateArrow g = T.StateArrow (f `o` g)
+-- |Poor orphans.  Please will someone adopt us?
+instance Groupoid a => Groupoid (T.StateArrow s a) where
+  inv (T.StateArrow f) = T.StateArrow (inv f)
+-- |Poor orphans.  Please will someone adopt us?
+instance Semigroupoid a => Semigroupoid (T.CoStateArrow s a) where
+  T.CoStateArrow f `o` T.CoStateArrow g = T.CoStateArrow (f `o` g)
+-- |Poor orphans.  Please will someone adopt us?
+instance Groupoid a => Groupoid (T.CoStateArrow s a) where
+  inv (T.CoStateArrow f) = T.CoStateArrow (inv f)
+-- |Poor orphans.  Please will someone adopt us?
+instance Semigroupoid a => Semigroupoid (T.StreamArrow a) where
+  T.StreamArrow f `o` T.StreamArrow g = T.StreamArrow (f `o` g)
+-- |Poor orphans.  Please will someone adopt us?
+instance Groupoid a => Groupoid (T.StreamArrow a) where
+  inv (T.StreamArrow f) = T.StreamArrow (inv f)
+#endif
+instance (Arrow a, BiArrow a) => BiArrow (T.StateArrow s a) where
+  f <-> g = T.StateArrow (first $ f <-> g)
+  invert (T.StateArrow f) = T.StateArrow (invert f)
+instance BiArrow' a => BiArrow' (T.StateArrow s a)
+instance BiArrow a => BiArrow (T.CoStateArrow s a) where
+  f <-> g = T.CoStateArrow ((f .) <-> (g .))
+  invert (T.CoStateArrow f) = T.CoStateArrow (invert f)
+instance BiArrow' a => BiArrow' (T.CoStateArrow s a)
+instance BiArrow a => BiArrow (T.StreamArrow a) where
+  f <-> g = T.StreamArrow (fmap f <-> fmap g)
+  invert (T.StreamArrow f) = T.StreamArrow (invert f)
+instance BiArrow' a => BiArrow' (T.StreamArrow a)
 #endif

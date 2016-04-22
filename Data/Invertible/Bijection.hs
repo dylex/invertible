@@ -62,7 +62,7 @@ instance ArrowZero a => ArrowZero (Bijection a) where
 
 #ifdef VERSION_semigroupoids
 instance Semigroupoid a => Semigroupoid (Bijection a) where
-  o (f1 :<->: g1) (f2 :<->: g2) = o f1 f2 :<->: o g2 g1
+  (f1 :<->: g1) `o` (f2 :<->: g2) = (f1 `o` f2) :<->: (g2 `o` g1)
 
 instance Semigroupoid a => Groupoid (Bijection a) where
   inv (f :<->: g) = g :<->: f
