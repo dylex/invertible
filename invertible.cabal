@@ -55,6 +55,7 @@ library
     Data.Invertible.Prelude
     Data.Invertible
     Control.Invertible.BiArrow
+    Control.Invertible.MonadArrow
     Control.Invertible.Functor
     Control.Invertible.Monoidal
 

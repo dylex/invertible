@@ -7,8 +7,8 @@ module Data.Invertible.Bijection
   ) where
 
 import Prelude hiding (id, (.))
-import Control.Category (Category(..))
-import Control.Arrow (Arrow(..), ArrowChoice(..), ArrowZero(..))
+import Control.Category
+import Control.Arrow
 #ifdef VERSION_semigroupoids
 import Data.Semigroupoid (Semigroupoid(..))
 import Data.Groupoid (Groupoid(..))
@@ -45,17 +45,17 @@ instance Category a => Category (Bijection a) where
 -- '&&&' is first-biased, and uses only the left argument's 'biFrom'.
 instance Arrow a => Arrow (Bijection a) where
   arr f = arr f :<->: arr (const (error "Bijection: arr has no inverse"))
-  first (f :<->: g) = first f :<->: first g
+  first  (f :<->: g) = first f  :<->: first g
   second (f :<->: g) = second f :<->: second g
   (f :<->: g) *** (f' :<->: g') = (f *** f') :<->: (g *** g')
-  (f :<->: g) &&& (f' :<->: _) = (f &&& f') :<->: (g . arr fst) -- (g' . arr snd)
+  (f :<->: g) &&& (f' :<->: _ ) = (f &&& f') :<->: (g . arr fst) -- (g' . arr snd)
 
 -- |'|||' is Left-biased, and uses only the left argument's 'biFrom'.
 instance ArrowChoice a => ArrowChoice (Bijection a) where
-  left (f :<->: g) = left f :<->: left g
+  left  (f :<->: g) = left f  :<->: left g
   right (f :<->: g) = right f :<->: right g
   (f :<->: g) +++ (f' :<->: g') = (f +++ f') :<->: (g +++ g')
-  (f :<->: g) ||| (f' :<->: _) = (f ||| f') :<->: (arr Left . g) -- (arr Right . g')
+  (f :<->: g) ||| (f' :<->: _ ) = (f ||| f') :<->: (arr Left . g) -- (arr Right . g')
 
 instance ArrowZero a => ArrowZero (Bijection a) where
   zeroArrow = zeroArrow :<->: zeroArrow
