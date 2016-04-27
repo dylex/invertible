@@ -12,7 +12,7 @@ license:             BSD3
 author:              Dylan Simon
 maintainer:          dylan@dylex.net
 copyright:           2016
-category:            Data, Control
+category:            Data, Control, Composition
 build-type:          Simple
 cabal-version:       >=1.10
 tested-with:         GHC == 7.10.3
