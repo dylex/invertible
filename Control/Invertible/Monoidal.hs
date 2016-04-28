@@ -22,6 +22,9 @@ module Control.Invertible.Monoidal
   , (>>>>*<)
   , (>>*<<)
   , pureI
+  , sequenceI_
+  , mapI_
+  , forI_
   , sequenceMaybesI
   , mapMaybeI
   -- * MonoidalAlt
@@ -106,13 +109,25 @@ infix 3 >>*<<
 pureI :: Monoidal f => a -> f a
 pureI a = I.const a >$< unit
 
--- |Sequence (like 'Control.Applicative.sequenceA') and filter (like 'Data.Maybe.catMaybes') a list of monoidals, producing the list of non-'Nothing' values.
+-- |Sequence (like 'Data.Foldable.sequenceA_') a list of monoidals, ignoring (@'I.const' ()@) all the results.
+sequenceI_ :: (Foldable t, Monoidal f) => t (f ()) -> f ()
+sequenceI_ = foldr (*<) unit
+
+-- |Map each element to a monoidal and 'sequenceI_' the results.
+mapI_ :: (Foldable t, Monoidal f) => (a -> f ()) -> t a -> f ()
+mapI_ f = foldr ((*<) . f) unit
+
+-- |@flip 'mapI_'@
+forI_ :: (Foldable t, Monoidal f) => t a -> (a -> f ()) -> f ()
+forI_ = flip mapI_
+
+-- |Sequence (like 'Data.Traversable.sequenceA') and filter (like 'Data.Maybe.catMaybes') a list of monoidals, producing the list of non-'Nothing' values.
 -- Shorter input lists pad with 'Nothing's and longer ones are ignored.
 sequenceMaybesI :: Monoidal f => [f (Maybe a)] -> f [a]
 sequenceMaybesI [] = pureI []
 sequenceMaybesI (x:l) = liftI2 I.consMaybe x (sequenceMaybesI l)
 
--- |Map each element to a 'Maybe' monoidal and sequence the results (like 'Control.Applicative.traverse' and 'Data.Maybe.mapMaybe').
+-- |Map each element to a 'Maybe' monoidal and sequence the results (like 'Data.Traversable.traverse' and 'Data.Maybe.mapMaybe').
 mapMaybeI :: Monoidal f => (a -> f (Maybe b)) -> [a] -> f [b]
 mapMaybeI = (sequenceMaybesI .) . map
 
