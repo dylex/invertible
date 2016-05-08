@@ -6,6 +6,7 @@
 module Control.Invertible.Monoidal
   ( -- * Functor
     (>$<)
+  , (>$), ($<)
   -- * Monoidal
   , Monoidal(..)
   , (>*), (*<)
@@ -29,9 +30,9 @@ module Control.Invertible.Monoidal
   , mapMaybeI
   -- * MonoidalAlt
   , MonoidalAlt(..)
-  , possible
+  , optionalI
   , defaulting
-  , while
+  , manyI
   ) where
 
 import Prelude
@@ -44,7 +45,16 @@ import qualified Data.Invertible as I
 (>$<) :: I.Functor f => a <-> b -> f a -> f b
 (>$<) = I.fmap
 
-infixl 4 >$<
+infixl 4 $<, >$<, >$
+
+-- |Given a value an an invariant for that value, always provide that value and ignore the produced value.
+-- @'I.fmap' . flip 'I.consts' ()@
+(>$) :: I.Functor f => a -> f a -> f ()
+(>$) a = I.fmap $ I.consts a ()
+
+-- |@flip ('>$')@
+($<) :: I.Functor f => f a -> a -> f ()
+($<) = flip (>$)
 
 -- |Lax invariant monoidal functor.
 -- This roughly corresponds to 'Applicative', which, for covariant functors, is equivalent to a monoidal functor.
@@ -63,7 +73,7 @@ class I.Functor f => Monoidal f where
 (>*) :: Monoidal f => f a -> f () -> f a
 (>*) = liftI2 I.fst
 
-infixl 4 >*, >*<, *<
+infixl 4 *<, >*<, >*
 
 -- |Lift an (uncurried) bijection into a monoidal functor.
 liftI2 :: Monoidal f => ((a, b) <-> c) -> f a -> f b -> f c
@@ -139,16 +149,16 @@ class Monoidal f => MonoidalAlt f where
 infixl 3 >|<
 
 -- |Analogous to 'Control.Applicative.optional'.
-possible :: MonoidalAlt f => f a -> f (Maybe a)
-possible f = I.lft >$< (f >|< unit)
+optionalI :: MonoidalAlt f => f a -> f (Maybe a)
+optionalI f = I.lft >$< (f >|< unit)
 
 -- |Return a default value if a monoidal functor fails, and only apply it to non-default values.
 defaulting :: (MonoidalAlt f, Eq a) => a -> f a -> f a
-defaulting a f = I.fromMaybe a >$< possible f
+defaulting a f = I.fromMaybe a >$< optionalI f
 
 -- |Repeatedly apply a monoidal functor until it fails.  Analogous to 'Control.Applicative.many'.
-while :: MonoidalAlt f => f a -> f [a]
-while f = I.cons >$< possible (f >*< while f)
+manyI :: MonoidalAlt f => f a -> f [a]
+manyI f = I.cons >$< optionalI (f >*< manyI f)
 
 
 instance Monoidal (Bijection (->) ()) where
