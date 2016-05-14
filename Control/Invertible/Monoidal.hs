@@ -56,7 +56,7 @@ infixl 4 $<, >$<, >$
 ($<) :: I.Functor f => f a -> a -> f ()
 ($<) = flip (>$)
 
--- |Lax invariant monoidal functor.
+-- |Invariant monoidal functor.
 -- This roughly corresponds to 'Applicative', which, for covariant functors, is equivalent to a monoidal functor.
 -- Invariant functors, however, may admit a monoidal instance but not applicative.
 class I.Functor f => Monoidal f where
