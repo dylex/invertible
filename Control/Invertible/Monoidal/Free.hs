@@ -4,6 +4,7 @@
 -- This can provide a simple basis for things like invertible parsers.
 module Control.Invertible.Monoidal.Free
   ( Free(..)
+  , mapFree
   , foldFree
   , produceFree
   , runFree
@@ -11,8 +12,9 @@ module Control.Invertible.Monoidal.Free
   , reverseFree
   ) where
 
-import Control.Applicative (Alternative, (<|>))
+import Control.Applicative (Alternative(..))
 import Control.Monad (MonadPlus(..))
+import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (StateT(..))
 import Data.Monoid ((<>), Alt(..))
 
@@ -60,18 +62,25 @@ foldFree t (Free x) a = t x a
 produceFree :: Alternative m => (forall a' . f a' -> a' -> b) -> Free f a -> a -> m b
 produceFree t f = getAlt . foldFree (\x a -> Alt $ pure $ t x a) f
 
--- |Evaluate a 'Free' into an underlying 'MonadPlus', by evaluating '>|<' with '<|>'.
-runFree :: MonadPlus f => Free f a -> f a
-runFree Empty = return ()
+-- |Evaluate a 'Free' into an underlying 'Alternative', by evaluating '>|<' with '<|>'.
+runFree :: Alternative f => Free f a -> f a
+runFree Empty = pure ()
 runFree (Transform f p) = I.biTo f <$> runFree p
 runFree (Join p q) = (,) <$> runFree p <*> runFree q
 runFree (Choose p q) = Left <$> runFree p <|> Right <$> runFree q
 runFree (Free x) = x
 
+-- |Uncons the current state, returning the head and keeping the tail, or fail if empty.
+-- (Parsec's 'Text.Parsec.Prim.Stream' class provides similar but more general functionality.)
+unconsState :: Alternative m => StateT [a] m a
+unconsState = StateT ucs where
+  ucs (a:l) = pure (a, l)
+  ucs [] = empty
+
 -- |Given a way to convert @b@ elements into any @f a@, use a 'Free' to parse a list of @b@ elements into a value.
--- This just uses 'I.uncons' with 'runFree', and is the inverse of 'produceFree', provided the given conversions are themselves inverses.
+-- This just uses 'unconsState' with 'runFree', and is the inverse of 'produceFree', provided the given conversions are themselves inverses.
 parseFree :: MonadPlus m => (forall a' . f a' -> b -> m a') -> Free f a -> [b] -> m (a, [b])
-parseFree t = runStateT . runFree . mapFree (\x -> StateT $ \l -> case l of { (a:r) -> (, r) <$> t x a ; [] -> mzero })
+parseFree t = runStateT . runFree . mapFree (\x -> lift . t x =<< unconsState)
 
 -- |Flip the effective order of each '>*<' operation in a 'Free', so that processing is done in the reverse order.
 -- It probably goes without saying, but applying this to an infinite structure, such as those produced by 'manyI', will not terminate.
