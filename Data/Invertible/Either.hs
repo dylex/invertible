@@ -7,6 +7,9 @@ module Data.Invertible.Either
   , isRight
   , lft
   , rgt
+  , eitherFirst
+  , eitherSecond
+  , exchange
   ) where
 
 import Prelude
@@ -52,4 +55,28 @@ rgt =
   [biCase|
     Left () <-> Nothing
     Right a <-> Just a
+  |]
+
+-- |Lift an either out of the first component of a tuple.
+eitherFirst :: Either (a, c) (b, c) <-> (Either a b, c)
+eitherFirst =
+  [biCase|
+    Left  (a, c) <-> (Left  a, c)
+    Right (b, c) <-> (Right b, c)
+  |]
+
+-- |Lift an either out of the second component of a tuple.
+eitherSecond :: Either (a, b) (a, c) <-> (a, Either b c)
+eitherSecond =
+  [biCase|
+    Left  (a, b) <-> (a, Left  b)
+    Right (a, c) <-> (a, Right c)
+  |]
+
+exchange :: Either a (Either b c) <-> Either (Either a b) c
+exchange =
+  [biCase|
+    Left a <-> Left (Left a)
+    Right (Left a) <-> Left (Right a)
+    Right (Right a) <-> Right a
   |]
