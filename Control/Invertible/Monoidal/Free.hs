@@ -4,6 +4,7 @@
 -- This can provide a simple basis for things like invertible parsers.
 module Control.Invertible.Monoidal.Free
   ( Free(..)
+  , showsFree
   , mapFree
   , foldFree
   , produceFree
@@ -44,6 +45,20 @@ instance Monoidal (Free f) where
 
 instance MonoidalAlt (Free f) where
   (>|<) = Choose
+
+-- |Construct a string representation of a 'Free' structure, given a way to show any @f a@.
+showsFree :: (forall a' . f a' -> ShowS) -> Free f a -> ShowS
+showsFree _ Empty = showString "Empty"
+showsFree fs (Free f) = showString "(Free "
+  . fs f . showChar ')'
+showsFree fs (Join p q) = showString "(Join "
+  . showsFree fs p . showChar ' '
+  . showsFree fs q . showChar ')'
+showsFree fs (Choose p q) = showString "(Choose "
+  . showsFree fs p . showChar ' '
+  . showsFree fs q . showChar ')'
+showsFree fs (Transform _ p) = showString "(Transform _ "
+  . showsFree fs p . showChar ')'
 
 -- |Transform the type constructor within a 'Free'.
 mapFree :: (forall a' . f a' -> m a') -> Free f a -> Free m a
@@ -137,7 +152,7 @@ chooseLinear (Choose p q) r = I.exchange >$< chooseLinear p (Choose q r)
 chooseLinear p q = chooseTNF (freeLinear p) (freeLinear q)
 
 joinLinear :: Free f a -> Free f b -> Free f (a, b)
-joinLinear (Join p q) r = I.invert I.flatten2_1 I.. I.flatten1_2 >$< joinLinear p (Join q r)
+joinLinear (Join p q) r = [I.biCase|(a,(b,c)) <-> ((a,b),c)|] >$< joinLinear p (Join q r)
 joinLinear p q = joinTNF (freeLinear p) (freeLinear q)
 
 freeLinear :: Free f a -> Free f a
