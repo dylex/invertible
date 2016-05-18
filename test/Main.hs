@@ -11,7 +11,7 @@ tests = FreeMonoidal.tests
 
 main :: IO ()
 main = do
-  r <- Q.quickCheckResult tests
+  r <- Q.quickCheckWithResult Q.stdArgs{ Q.maxSize = 27, Q.maxSuccess = 1000 } tests
   if isSuccess r
     then exitSuccess
     else exitFailure

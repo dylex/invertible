@@ -34,7 +34,7 @@ data Free f a where
   Free :: !(f a) -> Free f a
   Join :: Free f a -> Free f b -> Free f (a, b)
   Choose :: Free f a -> Free f b -> Free f (Either a b)
-  Transform :: !(a I.<-> b) -> Free f a -> Free f b
+  Transform :: (a I.<-> b) -> Free f a -> Free f b
 
 instance I.Functor (Free f) where
   fmap f (Transform g p) = Transform (f I.. g) p
@@ -169,9 +169,7 @@ pivot = [I.biCase|(a,(b,c)) <-> ((a,b),c)|]
 swap12 :: (a,(b,c)) I.<-> (b,(a,c))
 swap12 = [I.biCase|(a,(b,c)) <-> (b,(a,c))|]
 
-type FreeComparator f = (forall a b . f a -> f b -> Ordering)
-
-sortJoinTDNF :: FreeComparator f -> Free f a -> Free f b -> Free f (a, b)
+sortJoinTDNF :: (forall a' b' . f a' -> f b' -> Ordering) -> Free f a -> Free f b -> Free f (a, b)
 sortJoinTDNF cmp (Transform f p) (Transform g q) = (f *** g) >$< sortJoinTDNF cmp p q
 sortJoinTDNF cmp (Transform f p) q = first f >$< sortJoinTDNF cmp p q
 sortJoinTDNF cmp p (Transform f q) = second f >$< sortJoinTDNF cmp p q
@@ -184,7 +182,7 @@ sortJoinTDNF cmp Empty p = I.invert I.snd >$< sortFreeTDNF cmp p
 sortJoinTDNF cmp p Empty = I.invert I.fst >$< sortFreeTDNF cmp p
 sortJoinTDNF _ p q = Join p q
 
-sortFreeTDNF :: FreeComparator f -> Free f a -> Free f a
+sortFreeTDNF :: (forall a' b' . f a' -> f b' -> Ordering) -> Free f a -> Free f a
 sortFreeTDNF cmp (Transform f p) = f >$< sortFreeTDNF cmp p
 sortFreeTDNF cmp (Choose p q) = chooseTNF (sortFreeTDNF cmp p) (sortFreeTDNF cmp q)
 sortFreeTDNF cmp (Join p q) = sortJoinTDNF cmp p (sortFreeTDNF cmp q)
