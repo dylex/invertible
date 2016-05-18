@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional version of "Data.HList.HList".
-{-# LANGUAGE DataKinds, FlexibleContexts #-}
+{-# LANGUAGE DataKinds, QuasiQuotes, TypeOperators, FlexibleContexts #-}
 module Data.Invertible.HList
   ( hCons
   , hReverse

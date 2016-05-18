@@ -2,7 +2,7 @@
 -- Invariant monoidal functors.
 -- 
 -- This roughly corresponds to "Control.Applicative", but exposes a non-overlapping API so can be imported unqualified.  It does, however, use operators similar to those provided by contravariant.
-{-# LANGUAGE CPP, Safe, FlexibleInstances #-}
+{-# LANGUAGE CPP, Safe, TypeOperators, FlexibleInstances #-}
 module Control.Invertible.Monoidal
   ( -- * Functor
     (>$<)

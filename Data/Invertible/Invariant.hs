@@ -1,5 +1,6 @@
 -- |
 -- Use bijections on 'Invariant' functors from "Data.Functor.Invariant".
+{-# LANGUAGE TypeOperators #-}
 module Data.Invertible.Invariant
   ( invmap
   ) where

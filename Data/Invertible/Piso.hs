@@ -1,5 +1,6 @@
 -- |
 -- Convert bijections to and from (total) 'P.Piso'.
+{-# LANGUAGE TypeOperators #-}
 module Data.Invertible.Piso
   ( toPiso
   , fromPiso

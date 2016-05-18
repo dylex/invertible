@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, RankNTypes, TupleSections, Safe #-}
+{-# LANGUAGE Safe, GADTs, RankNTypes, TupleSections, TypeOperators, QuasiQuotes #-}
 -- |
 -- A vague analog of free monads for invariant monoidals.
 -- This can provide a simple basis for things like invertible parsers.
@@ -13,7 +13,7 @@ module Control.Invertible.Monoidal.Free
   , reverseFree
   , freeTNF
   , freeTDNF
-  , freeLinearTDNF
+  , sortFreeTDNF
   ) where
 
 import Control.Applicative (Alternative(..))
@@ -21,6 +21,7 @@ import Control.Arrow ((***), first, second, (+++), left, right)
 import Control.Monad (MonadPlus(..))
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (StateT(..))
+import Data.Functor.Classes (Show1(..))
 import Data.Monoid ((<>), Alt(..))
 
 import Control.Invertible.Monoidal
@@ -47,18 +48,33 @@ instance MonoidalAlt (Free f) where
   (>|<) = Choose
 
 -- |Construct a string representation of a 'Free' structure, given a way to show any @f a@.
+showsPrecFree :: (forall a' . f a' -> ShowS) -> Int -> Free f a -> ShowS
+showsPrecFree _ _ Empty = showString "Empty"
+showsPrecFree fs d (Free f) = showParen (d > 10)
+  $ showString "Free "
+  . fs f
+showsPrecFree fs d (Join p q) = showParen (d > 10)
+  $ showString "Join "
+  . showsPrecFree fs 11 p . showChar ' '
+  . showsPrecFree fs 11 q
+showsPrecFree fs d (Choose p q) = showParen (d > 10)
+  $ showString "Choose "
+  . showsPrecFree fs 11 p . showChar ' '
+  . showsPrecFree fs 11 q
+showsPrecFree fs d (Transform _ p) = showParen (d > 10)
+  $ showString "Transform _ "
+  . showsPrecFree fs 11 p
+
+-- |Construct a string representation of a 'Free' structure, given a way to show any @f a@.
 showsFree :: (forall a' . f a' -> ShowS) -> Free f a -> ShowS
-showsFree _ Empty = showString "Empty"
-showsFree fs (Free f) = showString "(Free "
-  . fs f . showChar ')'
-showsFree fs (Join p q) = showString "(Join "
-  . showsFree fs p . showChar ' '
-  . showsFree fs q . showChar ')'
-showsFree fs (Choose p q) = showString "(Choose "
-  . showsFree fs p . showChar ' '
-  . showsFree fs q . showChar ')'
-showsFree fs (Transform _ p) = showString "(Transform _ "
-  . showsFree fs p . showChar ')'
+showsFree fs = showsPrecFree fs 0
+
+data Underscore = Underscore
+instance Show Underscore where
+  show Underscore = "_"
+
+instance (Functor f, Show1 f) => Show (Free f a) where
+  showsPrec = showsPrecFree (showsPrec1 11 . (Underscore <$))
 
 -- |Transform the type constructor within a 'Free'.
 mapFree :: (forall a' . f a' -> m a') -> Free f a -> Free m a
@@ -133,8 +149,8 @@ joinTDNF :: Free f a -> Free f b -> Free f (a, b)
 joinTDNF (Transform f p) (Transform g q) = (f *** g) >$< joinTDNF p q
 joinTDNF (Transform f p) q = first f >$< joinTDNF p q
 joinTDNF p (Transform g q) = second g >$< joinTDNF p q
-joinTDNF (Choose pp pq) q = Transform I.eitherFirst $ Choose (joinTDNF pp q) (joinTDNF pq q)
-joinTDNF p (Choose qp qq) = Transform I.eitherSecond $ Choose (joinTDNF p qp) (joinTDNF p qq)
+joinTDNF (Choose pp pq) q = I.eitherFirst >$< chooseTNF (joinTDNF pp q) (joinTDNF pq q)
+joinTDNF p (Choose qp qq) = I.eitherSecond >$< chooseTNF (joinTDNF p qp) (joinTDNF p qq)
 joinTDNF p Empty = Transform (I.invert I.fst) $ p
 joinTDNF Empty q = Transform (I.invert I.snd) $ q
 joinTDNF p q = Join p q
@@ -147,20 +163,29 @@ freeTDNF (Join p q) = joinTDNF (freeTDNF p) (freeTDNF q)
 freeTDNF (Choose p q) = chooseTNF (freeTDNF p) (freeTDNF q)
 freeTDNF p = p
 
-chooseLinear :: Free f a -> Free f b -> Free f (Either a b)
-chooseLinear (Choose p q) r = I.exchange >$< chooseLinear p (Choose q r)
-chooseLinear p q = chooseTNF (freeLinear p) (freeLinear q)
+pivot :: (a,(b,c)) I.<-> ((a,b),c)
+pivot = [I.biCase|(a,(b,c)) <-> ((a,b),c)|]
 
-joinLinear :: Free f a -> Free f b -> Free f (a, b)
-joinLinear (Join p q) r = [I.biCase|(a,(b,c)) <-> ((a,b),c)|] >$< joinLinear p (Join q r)
-joinLinear p q = joinTNF (freeLinear p) (freeLinear q)
+swap12 :: (a,(b,c)) I.<-> (b,(a,c))
+swap12 = [I.biCase|(a,(b,c)) <-> (b,(a,c))|]
 
-freeLinear :: Free f a -> Free f a
-freeLinear (Transform f p) = f >$< freeLinear p
-freeLinear (Choose p q) = chooseLinear p q
-freeLinear (Join p q) = joinLinear p q
-freeLinear p = p
+type FreeComparator f = (forall a b . f a -> f b -> Ordering)
 
--- |Convert a 'Free' to Linearized Transform Disjunction Normal Form: same as 'freeTDNF' except that all 'Choose' and 'Join' trees are linearized to the right: @Tree (Tree a b) c@ turns into @Tree a (Tree b c)@.
-freeLinearTDNF :: Free f a -> Free f a
-freeLinearTDNF = freeLinear . freeTDNF
+sortJoinTDNF :: FreeComparator f -> Free f a -> Free f b -> Free f (a, b)
+sortJoinTDNF cmp (Transform f p) (Transform g q) = (f *** g) >$< sortJoinTDNF cmp p q
+sortJoinTDNF cmp (Transform f p) q = first f >$< sortJoinTDNF cmp p q
+sortJoinTDNF cmp p (Transform f q) = second f >$< sortJoinTDNF cmp p q
+sortJoinTDNF cmp (Choose pp pq) q = I.eitherFirst >$< chooseTNF (sortJoinTDNF cmp pp q) (sortJoinTDNF cmp pq q)
+sortJoinTDNF cmp p (Choose qp qq) = I.eitherSecond >$< chooseTNF (sortJoinTDNF cmp p qp) (sortJoinTDNF cmp p qq)
+sortJoinTDNF cmp (Join p q) r = pivot >$< sortJoinTDNF cmp p (sortJoinTDNF cmp q r)
+sortJoinTDNF cmp p@(Free x) q@(Free y) | cmp x y == GT = I.swap >$< Join q p
+sortJoinTDNF cmp p@(Free x) (Join q@(Free y) r) | cmp x y == GT = swap12 >$< joinTDNF q (sortJoinTDNF cmp p r)
+sortJoinTDNF cmp Empty p = I.invert I.snd >$< sortFreeTDNF cmp p
+sortJoinTDNF cmp p Empty = I.invert I.fst >$< sortFreeTDNF cmp p
+sortJoinTDNF _ p q = Join p q
+
+sortFreeTDNF :: FreeComparator f -> Free f a -> Free f a
+sortFreeTDNF cmp (Transform f p) = f >$< sortFreeTDNF cmp p
+sortFreeTDNF cmp (Choose p q) = chooseTNF (sortFreeTDNF cmp p) (sortFreeTDNF cmp q)
+sortFreeTDNF cmp (Join p q) = sortJoinTDNF cmp p (sortFreeTDNF cmp q)
+sortFreeTDNF _ p = p

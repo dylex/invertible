@@ -1,6 +1,6 @@
 -- |
 -- The base representation for bidirectional arrows (bijections).
-{-# LANGUAGE Trustworthy, KindSignatures, FlexibleInstances, CPP #-}
+{-# LANGUAGE Trustworthy, TypeOperators, KindSignatures, FlexibleInstances, CPP #-}
 module Data.Invertible.Bijection
   ( Bijection(..)
   , type (<->)

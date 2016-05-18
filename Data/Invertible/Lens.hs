@@ -1,6 +1,6 @@
 -- |
 -- Convert bijections to and from lens isomorphisms in "Control.Lens.Iso".
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, TypeOperators #-}
 module Data.Invertible.Lens
   ( toIso
   , unIso

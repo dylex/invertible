@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional version of "Data.Bits".
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, TypeOperators #-}
 module Data.Invertible.Bits
   ( complement
   ) where

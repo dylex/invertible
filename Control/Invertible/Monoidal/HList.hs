@@ -1,6 +1,6 @@
 -- |
 -- Combine monoidal functors into HLists.
-{-# LANGUAGE DataKinds, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE TypeOperators, DataKinds, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, TypeFamilies, UndecidableInstances #-}
 module Control.Invertible.Monoidal.HList
   ( hConsI
   , (>:*<)

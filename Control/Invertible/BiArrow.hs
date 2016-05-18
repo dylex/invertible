@@ -4,7 +4,7 @@
 --
 --  * Artem Alimarine, et al. /There and Back Again: Arrows for Invertible Programming/. Haskell '05. <http://citeseer.ist.psu.edu/alimarine05there.html>
 --
-{-# LANGUAGE CPP, Trustworthy #-}
+{-# LANGUAGE CPP, Trustworthy, TypeOperators #-}
 module Control.Invertible.BiArrow
   ( BiArrow(..)
   , BiArrow'

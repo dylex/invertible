@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional transforms for "Data.Monoid".
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, TypeOperators, QuasiQuotes #-}
 module Data.Invertible.Monoid
   ( BiEndo(..)
   , dual

@@ -1,5 +1,6 @@
 -- |
 -- Bidirectional version of "Data.Coerce".
+{-# LANGUAGE TypeOperators #-}
 module Data.Invertible.Coerce
   ( coerce
   ) where

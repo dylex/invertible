@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional version of "Data.Maybe".
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, TypeOperators, QuasiQuotes #-}
 module Data.Invertible.Maybe
   ( isJust
   , isNothing

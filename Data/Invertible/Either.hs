@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional version of "Data.Either".
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, QuasiQuotes, TypeOperators #-}
 module Data.Invertible.Either
   ( switch
   , isLeft

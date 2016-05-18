@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional version of "Data.Complex".
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, QuasiQuotes, TypeOperators #-}
 module Data.Invertible.Complex
   ( complex
   , polar

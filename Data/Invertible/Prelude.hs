@@ -1,7 +1,7 @@
 -- |
 -- The bidirectional \"Prelude\", which re-exports various bijections similar to functions from "Prelude".
 -- Most \"un\"-functions are left out for obvious reasons.
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, TypeOperators #-}
 module Data.Invertible.Prelude
   ( (<->)
   , type (<->)

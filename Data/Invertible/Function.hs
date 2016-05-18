@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional version of "Data.Function".
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, TypeOperators #-}
 module Data.Invertible.Function
   ( id
   , (.)

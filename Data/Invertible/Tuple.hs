@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional version of "Data.Tuple" and other operations over nested tuples.
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, TypeOperators, QuasiQuotes #-}
 module Data.Invertible.Tuple
   ( fst
   , snd

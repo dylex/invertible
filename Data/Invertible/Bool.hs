@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional version of "Data.Bool".
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, TypeOperators #-}
 module Data.Invertible.Bool
   ( not
   ) where

@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional version of "Data.List" and other operations over lists.
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, QuasiQuotes, TypeOperators #-}
 module Data.Invertible.List
   ( cons
   , uncons

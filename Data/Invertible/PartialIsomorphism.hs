@@ -1,5 +1,6 @@
 -- |
 -- Convert bijections to and from (total) 'P.Iso'.
+{-# LANGUAGE TypeOperators #-}
 module Data.Invertible.PartialIsomorphism
   ( toIso
   , fromIso

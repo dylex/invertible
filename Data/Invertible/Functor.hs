@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional version of "Data.Functor".
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, QuasiQuotes, TypeOperators #-}
 module Data.Invertible.Functor
   ( bifmap
   , identity

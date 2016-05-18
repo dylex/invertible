@@ -1,6 +1,6 @@
 -- |
 -- Bidirectional operations over 'Ordering'.
-{-# LANGUAGE Safe #-}
+{-# LANGUAGE Safe, TypeOperators, QuasiQuotes #-}
 module Data.Invertible.Ord
   ( down
   ) where

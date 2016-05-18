@@ -5,7 +5,7 @@
 -- 
 -- > import qualified Control.Invertible.Functor as Inv
 --
-{-# LANGUAGE CPP, Safe, FlexibleInstances #-}
+{-# LANGUAGE CPP, Safe, TypeOperators, FlexibleInstances #-}
 module Control.Invertible.Functor
   ( Functor(..)
   , (<$>)
