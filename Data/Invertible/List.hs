@@ -9,6 +9,8 @@ module Data.Invertible.List
   , map
   , reverse
   , transpose
+  , lookup
+  , index
   , zip
   , zip3
   , zip4
@@ -21,9 +23,10 @@ module Data.Invertible.List
   , words
   ) where
 
-import Prelude hiding (map, reverse, zip, zip3, unzip, zipWith, lines, words)
+import Prelude hiding (map, reverse, lookup, zip, zip3, unzip, zipWith, lines, words)
 import Control.Arrow ((***))
 import qualified Data.List as L
+import Data.Tuple (swap)
 
 import Data.Invertible.Bijection
 import Data.Invertible.TH
@@ -64,6 +67,18 @@ reverse = involution L.reverse
 -- |'L.transpose' the rows and columns of its argument.
 transpose :: [[a]] <-> [[a]]
 transpose = involution L.transpose
+
+-- |Bi-directional 'L.lookup'.
+lookup :: (Eq a, Eq b) => [(a, b)] -> Maybe a <-> Maybe b
+lookup l = (flip L.lookup l =<<) :<->: (flip L.lookup (L.map swap l) =<<)
+
+-- |Combine 'L.elemIndex' and safe 'L.!!'.
+index :: Eq a => [a] -> Maybe a <-> Maybe Int
+index l = (flip L.elemIndex l =<<) :<->: (idx l =<<) where
+  idx _ i | i < 0 = Nothing
+  idx [] _ = Nothing
+  idx (x:_) 0 = Just x
+  idx (_:r) i = idx r $ pred i
 
 -- |'L.zip' two lists together.
 zip :: ([a], [b]) <-> [(a, b)]

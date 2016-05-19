@@ -53,6 +53,7 @@ library
     Data.Invertible.Functor
     Data.Invertible.List
     Data.Invertible.Maybe
+    Data.Invertible.Monad
     Data.Invertible.Monoid
     Data.Invertible.Ord
     Data.Invertible.Tuple

@@ -20,6 +20,7 @@ module Data.Invertible
   , module Data.Invertible.Functor
   , module Data.Invertible.List
   , module Data.Invertible.Maybe
+  , module Data.Invertible.Monad
   , module Data.Invertible.Monoid
   , module Data.Invertible.Ord
   , module Data.Invertible.Tuple
@@ -38,6 +39,7 @@ import Data.Invertible.Function
 import Data.Invertible.Functor
 import Data.Invertible.List
 import Data.Invertible.Maybe
+import Data.Invertible.Monad
 import Data.Invertible.Monoid
 import Data.Invertible.Ord
 import Data.Invertible.Tuple

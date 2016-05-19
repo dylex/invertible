@@ -31,11 +31,11 @@ isNothing =
     Just () <-> False
   |]
 
--- |Convert between (the head of) a (singleton) list and 'Maybe' (see 'M.listToMaybe'). (@'Control.Invertible.BiArrow.inv' 'maybeToList'@)
+-- |Convert between (the head of) a (singleton) list and 'Maybe' (see 'M.listToMaybe'). (@'Control.Invertible.BiArrow.invert' 'maybeToList'@)
 listToMaybe :: [a] <-> Maybe a
 listToMaybe = M.listToMaybe :<->: M.maybeToList
 
--- |Convert between 'Maybe' and a (singleton) list (see 'M.maybeToList'). (@'Control.Invertible.BiArrow.inv' 'listToMaybe'@)
+-- |Convert between 'Maybe' and a (singleton) list (see 'M.maybeToList'). (@'Control.Invertible.BiArrow.invert' 'listToMaybe'@)
 maybeToList :: Maybe a <-> [a]
 maybeToList = invert listToMaybe
 
