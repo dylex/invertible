@@ -182,6 +182,9 @@ sortJoinTDNF cmp Empty p = I.invert I.snd >$< sortFreeTDNF cmp p
 sortJoinTDNF cmp p Empty = I.invert I.fst >$< sortFreeTDNF cmp p
 sortJoinTDNF _ p q = Join p q
 
+-- |Equivalent to 'freeTDNF', but also sorts the terms within each 'Join' clause to conform to the given ordering.
+-- The resulting 'Join' trees will be right-linearized (@Join x (Join y (Join z ...))@ such that @x <= y@, @y <= z@, etc.
+-- THis performs a /O(n^2)/ bubble sort on the already exponential TDNF.
 sortFreeTDNF :: (forall a' b' . f a' -> f b' -> Ordering) -> Free f a -> Free f a
 sortFreeTDNF cmp (Transform f p) = f >$< sortFreeTDNF cmp p
 sortFreeTDNF cmp (Choose p q) = chooseTNF (sortFreeTDNF cmp p) (sortFreeTDNF cmp q)

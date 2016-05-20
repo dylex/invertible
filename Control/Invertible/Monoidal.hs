@@ -30,6 +30,7 @@ module Control.Invertible.Monoidal
   , mapMaybeI
   -- * MonoidalAlt
   , MonoidalAlt(..)
+  , (>|), (|<)
   , optionalI
   , defaulting
   , manyI
@@ -65,15 +66,15 @@ class I.Functor f => Monoidal f where
   -- |Merge two functors into a tuple, analogous to @'Control.Applicative.liftA2' (,)@. (Sometimes known as @**@.)
   (>*<) :: f a -> f b -> f (a, b)
 
--- | Sequence actions, discarding/inhabiting the unit value of the first argument.
-(*<) :: Monoidal f => f () -> f a -> f a
-(*<) = liftI2 I.snd
-
--- | Sequence actions, discarding/inhabiting the unit value of the second argument.
+-- |Sequence actions, discarding/inhabiting the unit value of the second argument.
 (>*) :: Monoidal f => f a -> f () -> f a
 (>*) = liftI2 I.fst
 
-infixl 4 *<, >*<, >*
+-- |Sequence actions, discarding/inhabiting the unit value of the first argument.
+(*<) :: Monoidal f => f () -> f a -> f a
+(*<) = liftI2 I.snd
+
+infixl 4 >*, >*<, *<
 
 -- |Lift an (uncurried) bijection into a monoidal functor.
 liftI2 :: Monoidal f => ((a, b) <-> c) -> f a -> f b -> f c
@@ -146,7 +147,15 @@ class Monoidal f => MonoidalAlt f where
   -- |Associative binary choice.
   (>|<) :: f a -> f b -> f (Either a b)
 
-infixl 3 >|<
+-- |Assymetric version of '>|<' that returns whichever action succeeds but always uses the left one on inputs.
+(>|) :: MonoidalAlt f => f a -> f a -> f a
+a >| b = (either id id :<->: Left) >$< (a >|< b)
+
+-- |Assymetric version of '>|<' that returns whichever action succeeds but always uses the right one on inputs.
+(|<) :: MonoidalAlt f => f a -> f a -> f a
+a |< b = (either id id :<->: Right) >$< (a >|< b)
+
+infixl 3 >|, >|<, |<
 
 -- |Analogous to 'Control.Applicative.optional'.
 optionalI :: MonoidalAlt f => f a -> f (Maybe a)
