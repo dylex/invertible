@@ -49,6 +49,7 @@ library
     Data.Invertible.Coerce
     Data.Invertible.Complex
     Data.Invertible.Either
+    Data.Invertible.Enum
     Data.Invertible.Function
     Data.Invertible.Functor
     Data.Invertible.List

@@ -6,13 +6,13 @@ module Data.Invertible.Prelude
   ( (<->)
   , type (<->)
 
-  , enum
-
   , const
   , flip
   , id
   , (.)
   , not
+  , enum
+  , succ
   , fst
   , snd
   , curry
@@ -30,17 +30,14 @@ module Data.Invertible.Prelude
   , words
   ) where
 
-import Prelude hiding (not, id, (.), const, flip, Functor(..), (<$>), fst, snd, curry, uncurry, map, reverse, zip, zip3, unzip, zipWith, lines, words)
+import Prelude hiding (not, id, (.), const, succ, flip, Functor(..), (<$>), fst, snd, curry, uncurry, map, reverse, zip, zip3, unzip, zipWith, lines, words)
 
 import Control.Invertible.BiArrow
 import Control.Invertible.Functor
 import Data.Invertible.Bijection
 import Data.Invertible.Bool
+import Data.Invertible.Enum
 import Data.Invertible.Function
 import Data.Invertible.Functor
 import Data.Invertible.Tuple
 import Data.Invertible.List
-
--- |Convert between an 'Int' and an 'Enum' with 'P.toEnum' and 'P.fromEnum'.
-enum :: Enum a => Int <-> a
-enum = toEnum :<->: fromEnum
