@@ -34,6 +34,7 @@ module Control.Invertible.Monoidal
   , optionalI
   , defaulting
   , manyI
+  , msumIndex
   ) where
 
 import Prelude
@@ -169,6 +170,19 @@ defaulting a f = I.fromMaybe a >$< optionalI f
 manyI :: MonoidalAlt f => f a -> f [a]
 manyI f = I.cons >$< optionalI (f >*< manyI f)
 
+-- |Try a list of monoidal actions in sequence, producing the index of the first successful action, and evaluating the action with the given index.
+msumIndex :: MonoidalAlt f => [f ()] -> f Int
+msumIndex [] = error "msumIndex: empty list"
+msumIndex [x]   = (       (\() -> 0)      :<->: which) >$< x where
+  which i = case compare i 0 of
+    LT -> error "msumIndex: negative index"
+    EQ -> ()
+    GT -> error "msumIndex: index too large"
+msumIndex (x:l) = (either (\() -> 0) succ :<->: which) >$< (x >|< msumIndex l) where
+  which i = case compare i 0 of
+    LT -> error "msumIndex: negative index"
+    EQ -> Left ()
+    GT -> Right (pred i)
 
 instance Monoidal (Bijection (->) ()) where
   unit = I.id
