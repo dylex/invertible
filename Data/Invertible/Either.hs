@@ -9,7 +9,7 @@ module Data.Invertible.Either
   , rgt
   , eitherFirst
   , eitherSecond
-  , exchange
+  , pivotEither
   ) where
 
 import Prelude
@@ -73,8 +73,9 @@ eitherSecond =
     Right (a, c) <-> (a, Right c)
   |]
 
-exchange :: Either a (Either b c) <-> Either (Either a b) c
-exchange =
+-- |Pivot nested either terms between right and left (lacking a standard 3-sum representation).
+pivotEither :: Either a (Either b c) <-> Either (Either a b) c
+pivotEither =
   [biCase|
     Left a <-> Left (Left a)
     Right (Left a) <-> Left (Right a)

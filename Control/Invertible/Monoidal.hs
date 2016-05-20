@@ -147,11 +147,11 @@ class Monoidal f => MonoidalAlt f where
   -- |Associative binary choice.
   (>|<) :: f a -> f b -> f (Either a b)
 
--- |Assymetric version of '>|<' that returns whichever action succeeds but always uses the left one on inputs.
+-- |Assymetric (and therefore probably not bijective) version of '>|<' that returns whichever action succeeds but always uses the left one on inputs.
 (>|) :: MonoidalAlt f => f a -> f a -> f a
 a >| b = (either id id :<->: Left) >$< (a >|< b)
 
--- |Assymetric version of '>|<' that returns whichever action succeeds but always uses the right one on inputs.
+-- |Assymetric (and therefore probably not bijective) version of '>|<' that returns whichever action succeeds but always uses the right one on inputs.
 (|<) :: MonoidalAlt f => f a -> f a -> f a
 a |< b = (either id id :<->: Right) >$< (a >|< b)
 
