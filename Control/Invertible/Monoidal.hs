@@ -35,6 +35,8 @@ module Control.Invertible.Monoidal
   , defaulting
   , manyI
   , msumIndex
+  , msumFirst, msumLast
+  , oneOfI
   ) where
 
 import Prelude
@@ -183,6 +185,17 @@ msumIndex (x:l) = (either (\() -> 0) succ :<->: which) >$< (x >|< msumIndex l) w
     LT -> error "msumIndex: negative index"
     EQ -> Left ()
     GT -> Right (pred i)
+
+-- |Fold a structure with '>|' (or '|<'), thus always using the first (or last) item for generation.
+msumFirst, msumLast :: (MonoidalAlt f, Traversable t) => t (f a) -> f a
+msumFirst = foldr1 (>|)
+msumLast = foldl1 (|<)
+
+-- |Take a list of items and apply them to the action in sequence until one succeeds and return the cooresponding item; match the input with the list and apply the corresponding action (or produce an error if the input is not an element of the list).
+oneOfI :: (MonoidalAlt f, Eq a) => (a -> f ()) -> [a] -> f a
+oneOfI _ [] = error "oneOfI: empty list"
+oneOfI f [x] = ((\() -> x) I.:<->: (\y -> if x == y then () else error "oneOfI: invalid option")) >$< f x
+oneOfI f (x:l) = (I.fromMaybe x I.. I.rgt) >$< (f x >|< oneOfI f l)
 
 instance Monoidal (Bijection (->) ()) where
   unit = I.id

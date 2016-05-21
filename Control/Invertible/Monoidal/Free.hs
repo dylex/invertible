@@ -62,7 +62,7 @@ showsPrecFree fs d (Choose p q) = showParen (d > 10)
   . showsPrecFree fs 11 p . showChar ' '
   . showsPrecFree fs 11 q
 showsPrecFree fs d (Transform _ p) = showParen (d > 10)
-  $ showString "Transform _ "
+  $ showString "Transform <bijection> "
   . showsPrecFree fs 11 p
 
 -- |Construct a string representation of a 'Free' structure, given a way to show any @f a@.
