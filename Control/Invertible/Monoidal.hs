@@ -186,7 +186,7 @@ msumIndex (x:l) = (either (\() -> 0) succ :<->: which) >$< (x >|< msumIndex l) w
     EQ -> Left ()
     GT -> Right (pred i)
 
--- |Fold a structure with '>|' (or '|<'), thus always using the first (or last) item for generation.
+-- |Fold a structure with '>|' ('|<'), thus always applying the input to the first (last) item for generation.
 msumFirst, msumLast :: (MonoidalAlt f, Traversable t) => t (f a) -> f a
 msumFirst = foldr1 (>|)
 msumLast = foldl1 (|<)
