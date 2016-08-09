@@ -21,7 +21,7 @@ import Control.Arrow ((***), first, second, (+++), left, right)
 import Control.Monad (MonadPlus(..))
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (StateT(..))
-import Data.Functor.Classes (Show1(..))
+import Data.Functor.Classes (Show1, showsPrec1)
 import Data.Monoid ((<>), Alt(..))
 
 import Control.Invertible.Monoidal

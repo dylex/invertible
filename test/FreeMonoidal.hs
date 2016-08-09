@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, FlexibleContexts, FlexibleInstances, TypeOperators, TupleSections, ConstraintKinds, GeneralizedNewtypeDeriving, QuasiQuotes #-}
+{-# LANGUAGE CPP, GADTs, FlexibleContexts, FlexibleInstances, TypeOperators, TupleSections, ConstraintKinds, GeneralizedNewtypeDeriving, QuasiQuotes #-}
 module FreeMonoidal (tests) where
 
 import Control.Monad (join, guard)
@@ -20,7 +20,12 @@ instance Functor (Const a) where
   fmap _ (Const x) = Const x
 
 instance Show a => Show1 (Const a) where
-  showsPrec1 = showsPrec
+#if MIN_VERSION_base(4,9,0)
+  liftShowsPrec _ _ =
+#else
+  showsPrec1 =
+#endif
+    showsPrec
 
 data Tree a
   = TreeEmpty
