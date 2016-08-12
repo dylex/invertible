@@ -9,6 +9,7 @@ description:
   .
   Most users will want to import one or more of "Data.Invertible" qualified, "Control.Invertible.Monoidal" unqualified, and any additional compatibility modules.
 license:             BSD3
+license-file:        LICENSE
 author:              Dylan Simon
 maintainer:          dylan@dylex.net
 copyright:           2016
