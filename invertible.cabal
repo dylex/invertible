@@ -88,10 +88,16 @@ library
     build-depends: lens == 4.*
   if flag(partial-isomorphisms)
     exposed-modules: Data.Invertible.PartialIsomorphism
-    build-depends: partial-isomorphisms
+    if impl(ghc >= 8)
+      build-depends: partial-isomorphisms > 0.2
+    else
+      build-depends: partial-isomorphisms
   if flag(Piso)
     exposed-modules: Data.Invertible.Piso
-    build-depends: Piso
+    if impl(ghc >= 8)
+      build-depends: Piso > 0.1
+    else
+      build-depends: Piso
   if flag(semigroupoids)
     exposed-modules: Data.Invertible.Semigroupoid
     build-depends: semigroupoids >= 4
