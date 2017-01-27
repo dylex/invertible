@@ -1,0 +1,8 @@
+resolver: lts-7.17
+flags:
+  invertible:
+    TypeCompose: false
+    arrows: false
+    hlist: false
+    partial-isomorphisms: false
+    piso: false
