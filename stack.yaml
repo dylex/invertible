@@ -1,8 +1,11 @@
 resolver: lts-7.17
 flags:
   invertible:
-    TypeCompose: false
-    arrows: false
     hlist: false
-    partial-isomorphisms: false
     piso: false
+extra-deps:
+- Stream-0.4.7.2
+- TypeCompose-0.9.12
+- arrows-0.4.4.1
+- lazysmallcheck-0.6
+- partial-isomorphisms-0.2.2
