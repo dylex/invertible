@@ -14,6 +14,7 @@ module Control.Invertible.BiArrow
   , (>>^^)
   , (<<^^)
   , (^^<<)
+  , BiKleisli
   ) where
 
 import Prelude hiding ((.))
@@ -106,6 +107,9 @@ instance SemigroupoidArrowA => BiArrow (Bijection a) where
   invert (f :<->: g) = g :<->: f
 
 instance SemigroupoidArrowA => BiArrow' (Bijection a)
+
+-- |Bidirectional 'Control.Arrow.Kleisli' monad arrow transformer.
+type BiKleisli m = Bijection (Kleisli m)
 
 #ifdef VERSION_semigroupoids
 instance (Semigroupoid a, Arrow a) => BiArrow (Semigroupoid.Iso a) where

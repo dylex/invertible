@@ -16,15 +16,20 @@ import Data.Typeable (cast)
 import Language.Haskell.Meta.Parse (parsePat)
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
+import Text.Read.Lex (isSymbolChar)
 
 import Data.Invertible.Bijection
 
-split :: Eq a => [a] -> [a] -> [[a]]
+split :: String -> String -> [String]
 split _ [] = []
-split t s@(c:r)
-  | Just s' <- stripPrefix t s = [] : split t s'
-  | p:l <- split t r = (c:p):l
-  | otherwise = [s]
+split t (p:s)
+  | not (isSymbolChar p)
+  , Just (p':s') <- stripPrefix t s
+  , not (isSymbolChar p') = [p] : conshead p' (split t s')
+  | otherwise = conshead p $ split t s
+  where
+  conshead c [] = [[c]]
+  conshead c (h:t) = (c:h):t
 
 patToPat :: TH.Pat -> TH.Pat
 patToPat = ptp . gmapT pta where

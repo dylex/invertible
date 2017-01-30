@@ -1,12 +1,23 @@
 -- |
 -- A symmetric version of the Kleisli monad transformer arrow.
--- BiKleisli provides this Kleisli-like arrow over bijections.
+-- This admits three isomorphic 'MonadBijection' types:
+--
+-- * @'MonadArrow' ('<->') m a b@
+-- * @'Bijection' ('MonadFunction' m) a b@
+-- * @m a '<->' m b@
 --
 -- The Alimarine paper just calls it \"MoT\" for Monad Transformer.
 {-# LANGUAGE CPP, Safe, TupleSections, FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TypeOperators #-}
 module Control.Invertible.MonadArrow
   ( MonadArrow(..)
-  , BiKleisli
+  , MonadFunction
+  , MonadBijection
+  , MonadBijection'
+  , MonadBijection''
+  , monadBijection
+  , monadBijection'
   ) where
 
 import Prelude hiding (id, (.))
@@ -20,13 +31,26 @@ import Data.Groupoid (Groupoid(..))
 #endif
 
 import Data.Invertible.Bijection
+import Data.Invertible.TH
 import Control.Invertible.BiArrow
 
 -- |Bidirectional 'Control.Arrow.Kleisli'-like monad arrow transformer.
 newtype MonadArrow a m b c = MonadArrow { runMonadArrow :: a (m b) (m c) }
 
--- |A MonadArrow over bijections.
-type BiKleisli m a b = MonadArrow (<->) m a b
+-- |Specialization of 'MonadArrow' to function arrows.
+type MonadFunction = MonadArrow (->)
+
+type MonadBijection m = MonadArrow (<->) m
+type MonadBijection' m = Bijection (MonadFunction m)
+type MonadBijection'' m a b = m a <-> m b
+
+-- |Convert between isomorphic representations of 'MonadBijection's.
+monadBijection :: MonadBijection' m a b <-> MonadBijection m a b
+monadBijection = [biCase|MonadArrow f :<->: MonadArrow g <-> (MonadArrow (f :<->: g))|]
+
+-- |Convert between isomorphic representations of 'MonadBijection's.
+monadBijection' :: MonadBijection'' m a b <-> MonadBijection' m a b
+monadBijection' = [biCase|f :<->: g <-> MonadArrow f :<->: MonadArrow g|]
 
 instance Category a => Category (MonadArrow a m) where
   id = MonadArrow id
