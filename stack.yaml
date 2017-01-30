@@ -1,4 +1,7 @@
 resolver: lts-7.17
+packages:
+- location: .
+- location: hxt
 flags:
   invertible:
     hlist: false
