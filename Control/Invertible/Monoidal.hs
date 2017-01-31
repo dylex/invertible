@@ -9,6 +9,8 @@ module Control.Invertible.Monoidal
   , (>$), ($<)
   -- * Monoidal
   , Monoidal(..)
+  , unitDefault
+  , pairADefault
   , (>*), (*<)
   -- ** Tuple combinators
   , liftI2
@@ -30,6 +32,7 @@ module Control.Invertible.Monoidal
   , mapMaybeI
   -- * MonoidalAlt
   , MonoidalAlt(..)
+  , eitherADefault
   , (>|), (|<)
   , optionalI
   , defaulting
@@ -40,6 +43,7 @@ module Control.Invertible.Monoidal
   ) where
 
 import Prelude
+import Control.Applicative (liftA2, Alternative, (<|>))
 import Control.Arrow ((&&&), (***))
 
 import Data.Invertible.Bijection
@@ -68,6 +72,14 @@ class I.Functor f => Monoidal f where
   unit :: f ()
   -- |Merge two functors into a tuple, analogous to @'Control.Applicative.liftA2' (,)@. (Sometimes known as @**@.)
   (>*<) :: f a -> f b -> f (a, b)
+
+-- |Default 'unit' implementation for non-invertible 'Applicative's.
+unitDefault :: Applicative f => f ()
+unitDefault = pure ()
+
+-- |Default '>*< implementation for non-invertible 'Applicative's.
+pairADefault :: Applicative f => f a -> f b -> f (a, b)
+pairADefault = liftA2 (,)
 
 -- |Sequence actions, discarding/inhabiting the unit value of the second argument.
 (>*) :: Monoidal f => f a -> f () -> f a
@@ -149,6 +161,10 @@ mapMaybeI = (sequenceMaybesI .) . map
 class Monoidal f => MonoidalAlt f where
   -- |Associative binary choice.
   (>|<) :: f a -> f b -> f (Either a b)
+
+-- |Default '>|<' implementation for non-invertible 'Alternative's.
+eitherADefault :: Alternative f => f a -> f b -> f (Either a b)
+eitherADefault a b = Left <$> a <|> Right <$> b
 
 -- |Assymetric (and therefore probably not bijective) version of '>|<' that returns whichever action succeeds but always uses the left one on inputs.
 (>|) :: MonoidalAlt f => f a -> f a -> f a

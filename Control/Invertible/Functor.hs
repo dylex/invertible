@@ -8,9 +8,11 @@
 {-# LANGUAGE CPP, Safe, TypeOperators, FlexibleInstances #-}
 module Control.Invertible.Functor
   ( Functor(..)
+  , fmapDefault
   , (<$>)
   ) where
 
+import qualified Prelude
 import Prelude hiding ((.), Functor(..), (<$>))
 import Control.Arrow (Arrow)
 import Control.Category ((.))
@@ -26,6 +28,10 @@ import Data.Invertible.Monoid (BiEndo(..))
 -- |An invariant version of 'Data.Functor.Functor', equivalent to 'Data.Functor.Inviarant.Invariant'.
 class Functor f where
   fmap :: a <-> b -> f a -> f b
+
+-- |Default invertible 'Functor' implementation for simple non-invertible 'Prelude.Functor's.
+fmapDefault :: Prelude.Functor f => a <-> b -> f a -> f b
+fmapDefault (f :<->: _) x = f Prelude.<$> x
 
 -- |An infix synnonym for 'fmap'.
 (<$>) :: Functor f => a <-> b -> f a -> f b
