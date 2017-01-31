@@ -22,11 +22,11 @@ import Data.Invertible.Bijection
 
 split :: String -> String -> [String]
 split _ [] = []
-split t (p:s)
+split d (p:s)
   | not (isSymbolChar p)
-  , Just (p':s') <- stripPrefix t s
-  , not (isSymbolChar p') = [p] : conshead p' (split t s')
-  | otherwise = conshead p $ split t s
+  , Just (p':s') <- stripPrefix d s
+  , not (isSymbolChar p') = [p] : conshead p' (split d s')
+  | otherwise = conshead p $ split d s
   where
   conshead c [] = [[c]]
   conshead c (h:t) = (c:h):t

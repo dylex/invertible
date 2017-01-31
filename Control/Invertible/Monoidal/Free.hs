@@ -23,6 +23,7 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (StateT(..))
 import Data.Functor.Classes (Show1, showsPrec1)
 import Data.Monoid ((<>), Alt(..))
+import Data.Void (Void, absurd)
 
 import Control.Invertible.Monoidal
 import qualified Data.Invertible as I
@@ -30,6 +31,7 @@ import qualified Data.Invertible as I
 -- |Produce a 'MonoidalAlt' out of any type constructor, simply by converting each monoidal operation into a constructor.
 -- Although a version more analogous to a free monad could be defined for instances of 'I.Functor' and restricted to 'Monoidal', including the Yoneda transform makes this the more general case.
 data Free f a where
+  Void :: Free f Void
   Empty :: Free f ()
   Free :: !(f a) -> Free f a
   Join :: Free f a -> Free f b -> Free f (a, b)
@@ -45,10 +47,12 @@ instance Monoidal (Free f) where
   (>*<) = Join
 
 instance MonoidalAlt (Free f) where
+  zero = Void
   (>|<) = Choose
 
 -- |Construct a string representation of a 'Free' structure, given a way to show any @f a@.
 showsPrecFree :: (forall a' . f a' -> ShowS) -> Int -> Free f a -> ShowS
+showsPrecFree _ _ Void = showString "Void"
 showsPrecFree _ _ Empty = showString "Empty"
 showsPrecFree fs d (Free f) = showParen (d > 10)
   $ showString "Free "
@@ -78,6 +82,7 @@ instance (Functor f, Show1 f) => Show (Free f a) where
 
 -- |Transform the type constructor within a 'Free'.
 mapFree :: (forall a' . f a' -> m a') -> Free f a -> Free m a
+mapFree _ Void = Void
 mapFree _ Empty = Empty
 mapFree t (Transform f p) = Transform f $ mapFree t p
 mapFree t (Join p q) = Join (mapFree t p) (mapFree t q)
@@ -86,6 +91,7 @@ mapFree t (Free x) = Free (t x)
 
 -- |Given a way to extract a @b@ from any @f a@, use a 'Free' applied to a value to produce a @b@ by converting '>*<' to '<>'.
 foldFree :: Monoid b => (forall a' . f a' -> a' -> b) -> Free f a -> a -> b
+foldFree _ Void a = absurd a
 foldFree _ Empty () = mempty
 foldFree t (Transform f p) a = foldFree t p $ I.biFrom f a
 foldFree t (Join p q) (a, b) = foldFree t p a <> foldFree t q b
@@ -99,6 +105,7 @@ produceFree t f = getAlt . foldFree (\x a -> Alt $ pure $ t x a) f
 
 -- |Evaluate a 'Free' into an underlying 'Alternative', by evaluating '>|<' with '<|>'.
 runFree :: Alternative f => Free f a -> f a
+runFree Void = empty
 runFree Empty = pure ()
 runFree (Transform f p) = I.biTo f <$> runFree p
 runFree (Join p q) = (,) <$> runFree p <*> runFree q

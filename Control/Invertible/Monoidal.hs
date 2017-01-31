@@ -45,6 +45,7 @@ module Control.Invertible.Monoidal
 import Prelude
 import Control.Applicative (liftA2, Alternative, (<|>))
 import Control.Arrow ((&&&), (***))
+import Data.Void (Void)
 
 import Data.Invertible.Bijection
 import qualified Data.Invertible as I
@@ -159,6 +160,8 @@ mapMaybeI = (sequenceMaybesI .) . map
 
 -- |Monoidal functors that allow choice.
 class Monoidal f => MonoidalAlt f where
+  -- |An always-failing (and thus impossible) value.
+  zero :: f Void
   -- |Associative binary choice.
   (>|<) :: f a -> f b -> f (Either a b)
 

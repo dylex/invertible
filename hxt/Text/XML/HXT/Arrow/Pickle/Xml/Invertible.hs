@@ -17,7 +17,8 @@ import           Control.Monad.State.Class (modify, state)
 import           Data.Char.Properties.XMLCharProps (isXmlSpaceChar)
 import qualified Data.Invertible as Inv
 import           Data.List (partition)
-import           Text.XML.HXT.Arrow.Pickle.Schema (Schema(Any), scEmpty, scSeq, scAlt)
+import           Data.Void (absurd)
+import           Text.XML.HXT.Arrow.Pickle.Schema (Schema(Any), scEmpty, scSeq, scAlt, scNull)
 import           Text.XML.HXT.Arrow.Pickle.Xml
 import qualified Text.XML.HXT.Core as HXT
 import qualified Text.XML.HXT.DOM.XmlNode as XN
@@ -41,6 +42,11 @@ instance Monoidal PU where
     }
 
 instance MonoidalAlt PU where
+  zero = PU
+    { appPickle = \a _ -> absurd a
+    , appUnPickle = throwMsg "PU.zero"
+    , theSchema = scNull
+    }
   p >|< q = PU
     { appPickle = either (appPickle p) (appPickle q)
     , appUnPickle = mchoice (Left <$> appUnPickle p) return (Right <$> appUnPickle q)

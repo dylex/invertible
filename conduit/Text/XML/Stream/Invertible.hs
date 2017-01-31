@@ -9,11 +9,13 @@ module Text.XML.Stream.Invertible
   , ignoreAttrs
   ) where
 
+import           Control.Applicative (empty)
 import           Control.Invertible.Monoidal
 import           Control.Monad.Catch (MonadThrow)
 import qualified Data.Invertible as I
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
+import           Data.Void (absurd)
 import qualified Data.XML.Types as X
 import qualified Text.XML.Stream.Parse as P
 import qualified Text.XML.Stream.Render as R
@@ -42,6 +44,7 @@ instance Monoidal AttrStreamer where
     (pairADefault pa pb) (\(a, b) -> ra a <> rb b)
 
 instance MonoidalAlt AttrStreamer where
+  zero = AttrStreamer empty absurd
   AttrStreamer pa ra >|< AttrStreamer pb rb = AttrStreamer
     (eitherADefault pa pb) (either ra rb)
 

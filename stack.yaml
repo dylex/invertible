@@ -13,3 +13,7 @@ extra-deps:
 - arrows-0.4.4.1
 - lazysmallcheck-0.6
 - partial-isomorphisms-0.2.2
+ghc-options:
+  invertible: -Wall -Werror -Wno-orphans
+  invertible-hxt: -Wall -Werror
+  invertible-conduit: -Wall -Werror
