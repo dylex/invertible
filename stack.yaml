@@ -2,6 +2,7 @@ resolver: lts-7.17
 packages:
 - location: .
 - location: hxt
+- location: conduit
 flags:
   invertible:
     hlist: false
