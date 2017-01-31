@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeOperators #-}
 module Data.Conduit.Invertible
   ( BiConduitM(..)
+  , BiConduitMaybe
   , SourceSink(..)
   , ZipSourceSink(..)
   , ProducerConsumer
@@ -16,13 +17,16 @@ module Data.Conduit.Invertible
   , biMapInput
 
   , pass
+  , passMaybe
   , filt
+  , filtMaybe
   , only
   ) where
 
 import           Control.Applicative ((*>))
 import           Control.Invertible.Monoidal
 import           Control.Monad (when, unless, mfilter)
+import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Conduit
 import qualified Data.Invertible as I
 
@@ -30,6 +34,8 @@ data BiConduitM o m a b = BiConduitM
   { biConduitMFwd :: ConduitM a o m b
   , biConduitMRev :: b -> Conduit o m a
   }
+
+type BiConduitMaybe o m a = MaybeT (BiConduitM o m a)
 
 instance I.Functor (BiConduitM o m a) where
   fmap (f I.:<->: g) (BiConduitM c p) = BiConduitM (f <$> c) (p . g)
@@ -97,10 +103,16 @@ biMapInput (f I.:<->: g) (BiConduitM c p) =
 pass :: Monad m => BiConduitM o m a (Maybe a)
 pass = BiConduitM await (mapM_ yield)
 
+passMaybe :: Monad m => BiConduitMaybe o m a a
+passMaybe = MaybeT pass
+
 filt :: Monad m => (a -> Bool) -> BiConduitM o m a (Maybe a)
 filt f = BiConduitM
   (maybe (return Nothing) (\x -> if f x then return (Just x) else Nothing <$ leftover x) =<< await)
   (mapM_ yield . mfilter f)
+
+filtMaybe :: Monad m => (a -> Bool) -> BiConduitMaybe o m a a
+filtMaybe = MaybeT . filt
 
 only :: (Eq a, Monad m) => a -> BiConduitM o m a Bool
 only y = BiConduitM

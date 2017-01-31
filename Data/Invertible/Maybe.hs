@@ -7,6 +7,7 @@ module Data.Invertible.Maybe
   , listToMaybe
   , maybeToList
   , fromMaybe
+  , fromJust
   ) where
 
 import qualified Data.Maybe as M
@@ -42,3 +43,7 @@ maybeToList = invert listToMaybe
 -- |Convert between 'Nothing' and a default value, or 'Just' and its value (not a true bijection).
 fromMaybe :: Eq a => a -> Maybe a <-> a
 fromMaybe d = M.fromMaybe d :<->: \a -> if a == d then Nothing else Just a
+
+-- |Convert between 'Just' and its value.
+fromJust :: Maybe a <-> a
+fromJust = M.fromJust :<->: Just

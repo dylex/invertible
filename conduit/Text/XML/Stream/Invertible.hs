@@ -1,5 +1,6 @@
 module Text.XML.Stream.Invertible
   ( Streamer
+  , StreamerMaybe
   , content
   , contentMaybe
 
@@ -12,6 +13,7 @@ module Text.XML.Stream.Invertible
 import           Control.Applicative (empty)
 import           Control.Invertible.Monoidal
 import           Control.Monad.Catch (MonadThrow)
+import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.Invertible as I
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -22,13 +24,16 @@ import qualified Text.XML.Stream.Render as R
 
 import           Data.Conduit.Invertible
 
-type Streamer m a = SourceSink m X.Event a
+type Streamer m = SourceSink m X.Event
+type StreamerMaybe m = MaybeT (SourceSink m X.Event)
 
 content :: MonadThrow m => Streamer m T.Text
 content = SourceSink P.content R.content
 
-contentMaybe :: MonadThrow m => Streamer m (Maybe T.Text)
-contentMaybe = SourceSink P.contentMaybe (mapM_ R.content)
+contentMaybe :: MonadThrow m => StreamerMaybe m T.Text
+contentMaybe = MaybeT $ SourceSink P.contentMaybe (mapM_ R.content)
+
+-- tag :: MonadThrow m => Name -> AttrStreamer a -> Streamer m b -> Streamer m (a, b)
 
 data AttrStreamer a = AttrStreamer
   { attrParser :: P.AttrParser a

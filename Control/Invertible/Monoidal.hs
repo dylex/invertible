@@ -45,6 +45,7 @@ module Control.Invertible.Monoidal
 import Prelude
 import Control.Applicative (liftA2, Alternative, (<|>))
 import Control.Arrow ((&&&), (***))
+import Control.Monad.Trans.Maybe (MaybeT(..))
 import Data.Void (Void)
 
 import Data.Invertible.Bijection
@@ -220,3 +221,25 @@ instance Monoidal (Bijection (->) ()) where
   unit = I.id
   -- |Uses the 'Monoid' instance to combine '()'s.
   (ua :<->: au) >*< (ub :<->: bu) = ua &&& ub :<->: uncurry mappend . (au *** bu)
+
+instance I.Functor m => I.Functor (MaybeT m) where
+  fmap f (MaybeT m) = MaybeT $ I.fmap (I.bifmap f) m
+
+instance Monoidal m => Monoidal (MaybeT m) where
+  unit = MaybeT $ I.invert I.fromJust >$< unit
+  MaybeT f >*< MaybeT g = MaybeT $ (lj :<->: uj) >$< (f >*< g) where
+    lj (Just a, Just b) = Just (a, b)
+    lj _ = Nothing
+    uj Nothing = (Nothing, Nothing)
+    uj (Just (a, b)) = (Just a, Just b)
+
+instance Monoidal m => MonoidalAlt (MaybeT m) where
+  zero = MaybeT $ I.const Nothing >$< unit
+  MaybeT f >|< MaybeT g = MaybeT $ (le :<->: ue) >$< (f >*< g) where
+    le (Just a, _) = Just $ Left a
+    le (_, Just b) = Just $ Right b
+    le _ = Nothing
+    ue Nothing = (Nothing, Nothing)
+    ue (Just (Left a)) = (Just a, Nothing)
+    ue (Just (Right b)) = (Nothing, Just b)
+

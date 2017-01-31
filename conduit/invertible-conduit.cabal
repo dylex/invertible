@@ -24,6 +24,7 @@ library
     Data.Conduit.Invertible
   build-depends:
     base >= 4.8 && <5,
+    transformers,
     conduit,
     invertible
   default-language:    Haskell2010
