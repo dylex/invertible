@@ -1,120 +1,121 @@
+-- |Reversible conduit pairs that can be combined using "Control.Invertible.Monoidal", useful for parser/generators.
+-- Note that these focus on manipulating the generated result (@r@ in "Data.Conduit"), not the streams themselves.
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
 module Data.Conduit.Invertible
   ( BiConduitM(..)
-  , BiConduitMaybe
-  , SourceSink(..)
+  , SourceSink
+  , biSink, biSource
   , ZipSourceSink(..)
   , ProducerConsumer
   , biConsumer, biProducer
   , toProducerConsumer
-  , toSourceSink
 
   , biFuse
   , biFuseBoth
-  , biMapOutput
-  , biMapInput
+  , biMapStream
 
   , pass
-  , passMaybe
   , filt
-  , filtMaybe
   , only
   ) where
 
-import           Control.Applicative ((*>))
+import           Control.Applicative (liftA2, (*>))
 import           Control.Invertible.Monoidal
-import           Control.Monad (when, unless, mfilter)
-import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           Control.Monad (void, when)
 import           Data.Conduit
 import qualified Data.Invertible as I
+import           Data.Void (Void, absurd)
 
-data BiConduitM o m a b = BiConduitM
-  { biConduitMFwd :: ConduitM a o m b
-  , biConduitMRev :: b -> Conduit o m a
+-- |Combine two conduits that are inverses of each other: one processes a stream to produce a final value, and the other takes that value to generate a stream.
+-- The forward processor may fail (using 'Nothing') in order to admit choice.
+-- 'BiConduitM' may be combined using 'I.Functor', 'Monoidal', and 'MonoidalAlt' instances.
+data BiConduitM i o m a b = BiConduitM -- :<-|->:
+  { biConduitMFwd :: ConduitM a o m (Maybe b) -- ^a forward processor that processes input @a@ into a final result @b@ (possibly producing output @o@)
+  , biConduitMRev :: b -> Conduit i m a -- ^and a reverse generator that, given a @b@, produces output @o@ (possibly taking input @i@)
   }
 
-type BiConduitMaybe o m a = MaybeT (BiConduitM o m a)
+instance I.Functor (BiConduitM i o m a) where
+  fmap (f I.:<->: g) (BiConduitM c p) = BiConduitM (fmap f <$> c) (p . g)
 
-instance I.Functor (BiConduitM o m a) where
-  fmap (f I.:<->: g) (BiConduitM c p) = BiConduitM (f <$> c) (p . g)
-
-instance Monoidal (BiConduitM o m a) where
-  unit = BiConduitM (return ()) return
+instance Monoidal (BiConduitM i o m a) where
+  unit = BiConduitM (pure $ Just ()) return
   BiConduitM ca pa >*< BiConduitM cb pb = BiConduitM
-    (pairADefault ca cb)
+    (liftA2 pairADefault ca cb)
     (\(a, b) -> pa a *> pb b)
 
-data SourceSink m a b = SourceSink
-  { biSink :: Sink a m b
-  , biSource :: b -> Source m a
-  }
+instance MonoidalAlt (BiConduitM i o m a) where
+  zero = BiConduitM (pure Nothing) (return . absurd)
+  BiConduitM ca pa >|< BiConduitM cb pb = BiConduitM
+    (maybe (fmap Right <$> cb) (return . Just . Left) =<< ca)
+    (either pa pb)
 
-instance I.Functor (SourceSink m a) where
-  fmap (f I.:<->: g) (SourceSink c p) = SourceSink (f <$> c) (p . g)
+-- |A special case of 'BiConduitM' where the conduits are a 'Source' and 'Sink'.
+type SourceSink = BiConduitM () Void
 
-instance Monoidal (SourceSink m a) where
-  unit = SourceSink (return ()) return
-  SourceSink ca pa >*< SourceSink cb pb = SourceSink
-    (pairADefault ca cb)
-    (\(a, b) -> pa a *> pb b)
+-- |Specialization of 'biConduitMFwd'
+biSink :: SourceSink m a b -> Sink a m (Maybe b)
+biSink = biConduitMFwd
 
+-- |Specialization of 'biConduitMRev'
+biSource :: SourceSink m a b -> b -> Source m a
+biSource = biConduitMRev
+
+-- |Alternative 'Monoidal' instance for 'SourceSink' that uses 'ZipSource' and 'ZipSink' when combining.
 newtype ZipSourceSink m a b = ZipSourceSink{ getZipSourceSink :: SourceSink m a b }
   deriving (I.Functor)
 
 instance Monad m => Monoidal (ZipSourceSink m a) where
-  unit = ZipSourceSink $ SourceSink (return ()) return
-  ZipSourceSink (SourceSink ca pa) >*< ZipSourceSink (SourceSink cb pb) = ZipSourceSink $ SourceSink
-    (getZipSink $ pairADefault (ZipSink ca) (ZipSink cb))
+  unit = ZipSourceSink unit
+  ZipSourceSink (BiConduitM ca pa) >*< ZipSourceSink (BiConduitM cb pb) = ZipSourceSink $ BiConduitM
+    (getZipSink $ liftA2 pairADefault (ZipSink ca) (ZipSink cb))
     (\(a, b) -> getZipSource $ ZipSource (pa a) *> ZipSource (pb b))
 
-type ProducerConsumer m a b = forall o . BiConduitM o m a b
+-- |A special case of 'BiConduitM' where the conduits are a 'Producer' and 'Consumer'.
+type ProducerConsumer m a b = forall i o . BiConduitM i o m a b
 
-biConsumer :: ProducerConsumer m a b -> Consumer a m b
+-- |Specialization of 'biConduitMFwd'
+biConsumer :: ProducerConsumer m a b -> Consumer a m (Maybe b)
 biConsumer = biConduitMFwd
 
+-- |Specialization of 'biConduitMRev'
 biProducer :: ProducerConsumer m a b -> b -> Producer m a
 biProducer = biConduitMRev
 
+-- |Combine 'toConsumer' and 'toProducer'.
 toProducerConsumer :: Monad m => SourceSink m a b -> ProducerConsumer m a b
-toProducerConsumer (SourceSink c p) = BiConduitM (toConsumer c) (toProducer . p)
+toProducerConsumer (BiConduitM c p) = BiConduitM (toConsumer c) (toProducer . p)
 
-toSourceSink :: ProducerConsumer m a b -> SourceSink m a b
-toSourceSink c = SourceSink (biConduitMFwd c) (biConduitMRev c)
-
-biFuse :: Monad m => BiConduitM b m a () -> BiConduitM c m b r -> BiConduitM c m a r
+-- |'fuse' two 'BiConduitM's.  Ignores a failure of the first conduit.
+biFuse :: Monad m => BiConduitM b b m a () -> BiConduitM ci co m b r -> BiConduitM ci co m a r
 biFuse (BiConduitM fa ra) (BiConduitM fb rb) =
-  BiConduitM (fuse fa fb) (\x -> fuse (rb x) (ra ()))
+  BiConduitM (fuse (void fa) fb) (\x -> fuse (rb x) (ra ()))
 
-biFuseBoth :: Monad m => BiConduitM b m a r1 -> BiConduitM c m b r2 -> BiConduitM c m a (r1, r2)
+-- |'fuseBoth' two 'BiConduitM's.  Fails if either conduit fails.
+biFuseBoth :: Monad m => BiConduitM b b m a r1 -> BiConduitM c c m b r2 -> BiConduitM c c m a (r1, r2)
 biFuseBoth (BiConduitM fa ra) (BiConduitM fb rb) =
-  BiConduitM (fuseBoth fa fb) (\(x, y) -> fuse (rb y) (ra x))
+  BiConduitM (uncurry pairADefault <$> fuseBoth fa fb) (\(x, y) -> fuse (rb y) (ra x))
 
-biMapOutput :: Monad m => (o1 I.<-> o2) -> BiConduitM o1 m i r -> BiConduitM o2 m i r
-biMapOutput (f I.:<->: g) (BiConduitM c p) =
-  BiConduitM (mapOutput f c) (mapInput g (Just . f) . p)
-
-biMapInput :: Monad m => (i1 I.<-> i2) -> BiConduitM o m i2 r -> BiConduitM o m i1 r
-biMapInput (f I.:<->: g) (BiConduitM c p) =
+-- |Apply 'mapInput' on forward conduit and 'mapOutput' on reverse, changing the type of the stream.
+biMapStream :: Monad m => (a I.<-> b) -> BiConduitM i o m b r -> BiConduitM i o m a r
+biMapStream (f I.:<->: g) (BiConduitM c p) =
   BiConduitM (mapInput f (Just . g) c) (mapOutput g . p)
 
 
-pass :: Monad m => BiConduitM o m a (Maybe a)
-pass = BiConduitM await (mapM_ yield)
+foldMapM :: Monad m => (a -> m (Maybe b)) -> Maybe a -> m (Maybe b)
+foldMapM = maybe (return Nothing)
 
-passMaybe :: Monad m => BiConduitMaybe o m a a
-passMaybe = MaybeT pass
+-- |Take/give a single value on the stream (the identity 'BiConduitM')
+pass :: Monad m => BiConduitM i o m a a
+pass = BiConduitM await yield
 
-filt :: Monad m => (a -> Bool) -> BiConduitM o m a (Maybe a)
+-- |Only take/give values matching the given predecate; fail or give nothing otherwise
+filt :: Monad m => (a -> Bool) -> BiConduitM i o m a a
 filt f = BiConduitM
-  (maybe (return Nothing) (\x -> if f x then return (Just x) else Nothing <$ leftover x) =<< await)
-  (mapM_ yield . mfilter f)
+  (foldMapM (\x -> if f x then return $ Just x else Nothing <$ leftover x) =<< await)
+  (\x -> when (f x) $ yield x)
 
-filtMaybe :: Monad m => (a -> Bool) -> BiConduitMaybe o m a a
-filtMaybe = MaybeT . filt
-
-only :: (Eq a, Monad m) => a -> BiConduitM o m a Bool
-only y = BiConduitM
-  (maybe (return False) (\x -> True <$ unless (y == x) (leftover x)) =<< await)
-  (\b -> when b $ yield y)
+-- |Only take/give a single value, failing on anything else.
+only :: (Eq a, Monad m) => a -> BiConduitM i o m a ()
+only y = I.invert (I.const y) >$< filt (y ==)

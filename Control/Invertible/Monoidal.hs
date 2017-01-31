@@ -4,8 +4,10 @@
 -- This roughly corresponds to "Control.Applicative", but exposes a non-overlapping API so can be imported unqualified.  It does, however, use operators similar to those provided by contravariant.
 {-# LANGUAGE CPP, Safe, TypeOperators, FlexibleInstances #-}
 module Control.Invertible.Monoidal
-  ( -- * Functor
-    (>$<)
+  ( Bijection(..)
+  , I.biCase
+    -- * Functor
+  , (>$<)
   , (>$), ($<)
   -- * Monoidal
   , Monoidal(..)
@@ -180,7 +182,7 @@ a |< b = (either id id :<->: Right) >$< (a >|< b)
 
 infixl 3 >|, >|<, |<
 
--- |Analogous to 'Control.Applicative.optional'.
+-- |Analogous to 'Control.Applicative.optional': always succeeds.
 optionalI :: MonoidalAlt f => f a -> f (Maybe a)
 optionalI f = I.lft >$< (f >|< unit)
 
@@ -227,19 +229,16 @@ instance I.Functor m => I.Functor (MaybeT m) where
 
 instance Monoidal m => Monoidal (MaybeT m) where
   unit = MaybeT $ I.invert I.fromJust >$< unit
-  MaybeT f >*< MaybeT g = MaybeT $ (lj :<->: uj) >$< (f >*< g) where
-    lj (Just a, Just b) = Just (a, b)
-    lj _ = Nothing
-    uj Nothing = (Nothing, Nothing)
-    uj (Just (a, b)) = (Just a, Just b)
+  MaybeT f >*< MaybeT g = MaybeT
+    $ (uncurry pairADefault :<->: maybe (Nothing, Nothing) (Just *** Just))
+    >$< (f >*< g)
 
 instance Monoidal m => MonoidalAlt (MaybeT m) where
   zero = MaybeT $ I.const Nothing >$< unit
-  MaybeT f >|< MaybeT g = MaybeT $ (le :<->: ue) >$< (f >*< g) where
-    le (Just a, _) = Just $ Left a
-    le (_, Just b) = Just $ Right b
-    le _ = Nothing
+  MaybeT f >|< MaybeT g = MaybeT
+    $ (uncurry eitherADefault :<->: ue)
+    >$< (f >*< g)
+    where
     ue Nothing = (Nothing, Nothing)
     ue (Just (Left a)) = (Just a, Nothing)
     ue (Just (Right b)) = (Nothing, Just b)
-

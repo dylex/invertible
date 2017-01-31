@@ -1,5 +1,5 @@
 name:                invertible-hxt
-version:             0.1
+version:             0
 synopsis:            invertible transformer instances for HXT Picklers
 description:
 license:             BSD3

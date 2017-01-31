@@ -1,8 +1,7 @@
+-- |Allow combining 'PU's using "Control.Invertible.Monoidal".
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Text.XML.HXT.Arrow.Pickle.Xml.Invertible
   ( module Text.XML.HXT.Arrow.Pickle.Xml
-  , Inv.biCase
-  , Inv.Bijection(..)
   , module Control.Invertible.Monoidal
   , xpWhitespace
   , xpTrim
