@@ -27,6 +27,7 @@ module Control.Invertible.Monoidal
   , (>>>>*<)
   , (>>*<<)
   , pureI
+  , constI
   , sequenceI_
   , mapI_
   , forI_
@@ -138,6 +139,10 @@ infix 3 >>*<<
 -- |A constant monoidal (like 'Control.Applicative.pure'), which always produces the same value and ignores everything.
 pureI :: Monoidal f => a -> f a
 pureI a = I.const a >$< unit
+
+-- |Supply a constant value to a monoidal and ignore whatever is produced.
+constI :: Monoidal f => a -> f a -> f ()
+constI a = (>$<) $ I.invert $ I.const a
 
 -- |Sequence (like 'Data.Foldable.sequenceA_') a list of monoidals, ignoring (@'I.const' ()@) all the results.
 sequenceI_ :: (Foldable t, Monoidal f) => t (f ()) -> f ()

@@ -17,8 +17,8 @@ module Data.Conduit.Invertible
   , biMapStream
 
   , pass
-  , filt
-  , only
+  , predicate
+  , exactly
   ) where
 
 import           Control.Applicative (liftA2, (*>))
@@ -29,7 +29,7 @@ import qualified Data.Invertible as I
 import           Data.Void (Void, absurd)
 
 -- |Combine two conduits that are inverses of each other: one processes a stream to produce a final value, and the other takes that value to generate a stream.
--- The forward processor may fail (using 'Nothing') in order to admit choice.
+-- The forward processor may fail (using 'Nothing') in order to admit choice, but it must not consume any input if it does so.
 -- 'BiConduitM' may be combined using 'I.Functor', 'Monoidal', and 'MonoidalAlt' instances.
 data BiConduitM i o m a b = BiConduitM -- :<-|->:
   { biConduitMFwd :: ConduitM a o m (Maybe b) -- ^a forward processor that processes input @a@ into a final result @b@ (possibly producing output @o@)
@@ -111,11 +111,11 @@ pass :: Monad m => BiConduitM i o m a a
 pass = BiConduitM await yield
 
 -- |Only take/give values matching the given predecate; fail or give nothing otherwise
-filt :: Monad m => (a -> Bool) -> BiConduitM i o m a a
-filt f = BiConduitM
+predicate :: Monad m => (a -> Bool) -> BiConduitM i o m a a
+predicate f = BiConduitM
   (foldMapM (\x -> if f x then return $ Just x else Nothing <$ leftover x) =<< await)
   (\x -> when (f x) $ yield x)
 
 -- |Only take/give a single value, failing on anything else.
-only :: (Eq a, Monad m) => a -> BiConduitM i o m a ()
-only y = I.invert (I.const y) >$< filt (y ==)
+exactly :: (Eq a, Monad m) => a -> BiConduitM i o m a ()
+exactly y = constI y $ predicate (y ==)

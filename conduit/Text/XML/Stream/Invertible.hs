@@ -1,11 +1,38 @@
--- |Combine "Text.XML.Stream.Parser" and "Text.XML.Stream.Generator" into a single, invertible stream using "Data.Conduit.Invertible".
+-- |Combine "Text.XML.Stream.Parser" and "Text.XML.Stream.Render" into a single, invertible stream using "Data.Conduit.Invertible".
+--
+-- These functions match the names in "Text.XML.Stream.Parser" as closely as possible, even when they aren't necessariy consistent.
 module Text.XML.Stream.Invertible
   ( module Control.Invertible.Monoidal
+    -- * XML stream processing
   , Streamer
+  , streamerParser
+  , streamerRender
+
+    -- * Event processing
   , force
+    -- ** Text content
   , content
   , requireContent
+    -- ** Tags
+    -- *** Tags with content
+  , tag
+  , tagPredicate
+  , tagName
+  , tagNoAttr
+  , tagIgnoreAttrs
+    -- *** Tags with no content
+  , emptyTag
+  , emptyTagName
+  , ignoreTag
+  , ignoreTagName
+  , ignoreAllTags
+    -- *** Tags with ignored content
+  , ignoreTree
+  , ignoreTreeName
+  , ignoreAllTrees
+  , ignoreEverything
 
+    -- * Attribute parsing
   , AttrStreamer(..)
   , attr
   , ignoreAttrs
@@ -13,7 +40,9 @@ module Text.XML.Stream.Invertible
 
 import           Control.Applicative (empty)
 import           Control.Invertible.Monoidal
+import           Control.Monad (when, void)
 import           Control.Monad.Catch (MonadThrow)
+import qualified Data.Conduit as C
 import qualified Data.Invertible as I
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -28,6 +57,17 @@ import           Data.Conduit.Invertible
 -- Note that all parsers may fail, so that they can be combined using 'MonoidalAlt' (and use 'optionalI' to test).
 type Streamer m = SourceSink m X.Event
 
+streamerParser :: Streamer m a -> C.Sink X.Event m (Maybe a)
+streamerParser = biSink
+
+streamerRender :: Streamer m a -> a -> C.Source m X.Event
+streamerRender = biSource
+
+justIf :: (a -> Bool) -> a -> Maybe a
+justIf p x
+  | p x = Just x
+  | otherwise = Nothing
+
 -- |Apply 'P.force', forcing a 'Streamer' to succeed and throwing an error if not.
 -- (This is not encoded in the type because 'BiConduitM's can always fail.)
 force :: MonadThrow m => String -> Streamer m a -> Streamer m a
@@ -41,7 +81,121 @@ content = BiConduitM (Just <$> P.content) R.content
 requireContent :: MonadThrow m => Streamer m T.Text
 requireContent = BiConduitM P.contentMaybe R.content
 
--- tag :: MonadThrow m => Name -> AttrStreamer a -> Streamer m b -> Streamer m (a, b)
+-- |Require a tag, providing handlers for attributes and body.
+-- Both of the handlers are essentially 'force'd, so that this will throw an error if either fail.
+-- The whole action fails iff there is no next tag (i.e., content or end).
+tag :: MonadThrow m
+  => AttrStreamer a -- ^attribute handler
+  -> Streamer m b -- ^children handler
+  -> Streamer m (X.Name, a, b)
+tag = tagPredicate (const True)
+
+-- |Require a tag with a name that matches the given predicate, providing handlers for attributes and body.
+-- Both of the handlers are essentially 'force'd, so that this will throw an error if either fail.
+-- The whole action fails iff the next tag's name does not match.
+tagPredicate :: MonadThrow m
+  => (X.Name -> Bool) -- ^a predicate to match the (input or argument) tag name against
+  -> AttrStreamer a -- ^attribute handler
+  -> Streamer m b -- ^children handler
+  -> Streamer m (X.Name, a, b)
+tagPredicate np (AttrStreamer ap ar) (BiConduitM bp br) = BiConduitM
+  (P.tag (justIf np) ((<$> ap) . (,)) $ \(n,a) -> (,,) n a <$> P.force ("failed to parse body of tag " ++ show n) bp)
+  (\(n, a, b) -> when (np n) $ R.tag n (ar a) (br b))
+
+-- |Require a tag with the given name, providing handlers for attributes and body.
+-- Both of the handlers are essentially 'force'd, so that this will throw an error if either fail.
+-- The whole action fails iff the next tag's name does not match.
+tagName :: MonadThrow m
+  => X.Name -- ^exact tag name to match
+  -> AttrStreamer a -- ^attribute handler
+  -> Streamer m b -- ^children handler
+  -> Streamer m (a, b)
+tagName n (AttrStreamer ap ar) (BiConduitM bp br) = BiConduitM
+  (P.tagName n ap $ (<$> P.force ("failed to parse body of tag " ++ show n) bp) . (,))
+  (\(a, b) -> R.tag n (ar a) (br b))
+
+-- |Require a tag with the given name, generating an error for any attributes, providing a handler for the body.
+-- The body handler is 'force'd, so that this will throw an error it fails.
+-- The whole action fails iff the next tag's name does not match.
+tagNoAttr :: MonadThrow m
+  => X.Name -- ^exact tag name to match
+  -> Streamer m b -- ^children handler
+  -> Streamer m b
+tagNoAttr n b = I.snd >$< tagName n unit b
+
+-- |Require a tag with the given name, ignoring any attributes, providing a handler for the body.
+-- The body handler is 'force'd, so that this will throw an error it fails.
+-- The whole action fails iff the next tag's name does not match.
+tagIgnoreAttrs :: MonadThrow m
+  => X.Name -- ^exact tag name to match
+  -> Streamer m b -- ^children handler
+  -> Streamer m b
+tagIgnoreAttrs n b = I.snd >$< tagName n ignoreAttrs b
+
+-- tagPredicateIgnoreAttrs doesn't seem all that useful...
+
+emptyTagR :: Monad m => X.Name -> C.Source m X.Event
+emptyTagR n = R.tag n mempty (return ())
+
+-- |Require a tag with a name that matches the given predicate, producing an error for any attributes or children.
+-- The whole action fails iff the next tag's name does not match.
+emptyTag :: MonadThrow m => (X.Name -> Bool) -> Streamer m X.Name
+emptyTag np = BiConduitM
+  (P.tag (justIf np) return return)
+  (\n -> when (np n) $ emptyTagR n)
+
+-- |Require a tag with the given name, producing an error for any attributes or children.
+-- The whole action fails iff the next tag's name does not match.
+emptyTagName :: MonadThrow m => X.Name -> Streamer m ()
+emptyTagName n = BiConduitM
+  (P.tagName n (return ()) return)
+  (\() -> emptyTagR n)
+
+-- |Require a tag with a name that matches the given predicate, ignoring any attributes and producing an error for any children.
+-- The whole action fails iff the next tag's name does not match.
+ignoreTag :: MonadThrow m => (X.Name -> Bool) -> Streamer m X.Name
+ignoreTag np = BiConduitM
+  (P.tag (justIf np) (<$ P.ignoreAttrs) return)
+  (\n -> when (np n) $ emptyTagR n)
+
+-- |Require a tag with the given name, ignoring any attributes and producing an error for any children.
+-- The whole action fails iff the next tag's name does not match.
+ignoreTagName :: MonadThrow m => X.Name -> Streamer m ()
+ignoreTagName n = BiConduitM
+  (P.ignoreTagName n)
+  (\() -> emptyTagR n)
+
+-- |Require a (single) tag, ignoring any attributes and producing an error for any children.
+-- The whole action fails iff there is no next tag (i.e., content or end).
+ignoreAllTags :: MonadThrow m => Streamer m X.Name
+ignoreAllTags = ignoreTag (const True)
+
+-- |Require a tag with a name that matches the given predicate, ignoring any attributes and children recursively.
+-- The whole action fails iff the next tag's name does not match.
+ignoreTree :: MonadThrow m => (X.Name -> Bool) -> Streamer m X.Name 
+ignoreTree np = BiConduitM
+  (P.tag (justIf np) (<$ P.ignoreAttrs) (<$ ignoreEverythingP))
+  (\n -> when (np n) $ emptyTagR n)
+
+-- |Require a tag with the given name, ignoring any attributes and children recursively.
+-- The whole action fails iff the next tag's name does not match.
+ignoreTreeName :: MonadThrow m => X.Name -> Streamer m ()
+ignoreTreeName n = BiConduitM
+  (P.ignoreTreeName n)
+  (\() -> emptyTagR n)
+
+-- |Require a (single) tag, ignoring any attributes and children recursively.
+-- The whole action fails iff there is no next tag (i.e., content or end).
+ignoreAllTrees :: MonadThrow m => Streamer m X.Name 
+ignoreAllTrees = ignoreTree (const True)
+
+-- this seems inefficient, but it's what Parse does.
+ignoreEverythingP :: MonadThrow m => C.Sink X.Event m ()
+ignoreEverythingP = void $ P.many P.ignoreAllTreesContent
+
+-- |Ignore any remaining tags and content, producing nothing.
+ignoreEverything :: MonadThrow m => Streamer m ()
+ignoreEverything = BiConduitM (Just <$> ignoreEverythingP) return
 
 -- |Combine 'P.AttrParser' and generated 'R.Attributes'.
 -- Like 'R.AttrParser', parsers may fail and be handled using 'MonoidalAlt' (or made optional using 'optionalI').
