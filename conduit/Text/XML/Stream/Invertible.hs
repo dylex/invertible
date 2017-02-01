@@ -1,6 +1,7 @@
 -- |Combine "Text.XML.Stream.Parser" and "Text.XML.Stream.Render" into a single, invertible stream using "Data.Conduit.Invertible".
 --
 -- These functions match the names in "Text.XML.Stream.Parser" as closely as possible, even when they aren't necessariy consistent.
+{-# LANGUAGE TupleSections #-}
 module Text.XML.Stream.Invertible
   ( module Control.Invertible.Monoidal
     -- * XML stream processing
@@ -36,13 +37,20 @@ module Text.XML.Stream.Invertible
   , AttrStreamer(..)
   , attr
   , ignoreAttrs
+
+    -- * XML processing
+  , ignoreWhitespace
+  , passElement
+  , passNode
   ) where
 
 import           Control.Applicative (empty)
 import           Control.Invertible.Monoidal
 import           Control.Monad (when, void)
 import           Control.Monad.Catch (MonadThrow)
+import           Data.Char (isSpace)
 import qualified Data.Conduit as C
+import qualified Data.Conduit.List as CL
 import qualified Data.Invertible as I
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -50,6 +58,7 @@ import           Data.Void (absurd)
 import qualified Data.XML.Types as X
 import qualified Text.XML.Stream.Parse as P
 import qualified Text.XML.Stream.Render as R
+import qualified Text.XML.Unresolved as U
 
 import           Data.Conduit.Invertible
 
@@ -197,6 +206,7 @@ ignoreEverythingP = void $ P.many P.ignoreAllTreesContent
 ignoreEverything :: MonadThrow m => Streamer m ()
 ignoreEverything = BiConduitM (Just <$> ignoreEverythingP) return
 
+
 -- |Combine 'P.AttrParser' and generated 'R.Attributes'.
 -- Like 'R.AttrParser', parsers may fail and be handled using 'MonoidalAlt' (or made optional using 'optionalI').
 data AttrStreamer a = AttrStreamer
@@ -224,3 +234,60 @@ attr n = AttrStreamer (P.requireAttr n) (R.attr n)
 -- |'P.ignoreAttrs', generating no attributes.
 ignoreAttrs :: AttrStreamer ()
 ignoreAttrs = AttrStreamer P.ignoreAttrs mempty
+
+
+ignoreWhitespaceP :: Monad m => C.Sink X.Event m ()
+ignoreWhitespaceP =
+  mapM_ (\x -> if isWhitespace x then ignoreWhitespaceP else C.leftover x) =<< C.await
+  where
+  isWhitespace X.EventBeginDocument               = True
+  isWhitespace X.EventEndDocument                 = True
+  isWhitespace X.EventBeginDoctype{}              = True
+  isWhitespace X.EventEndDoctype                  = True
+  isWhitespace X.EventInstruction{}               = True
+  isWhitespace (X.EventContent (X.ContentText t)) = T.all isSpace t
+  isWhitespace X.EventComment{}                   = True
+  isWhitespace _                                  = False
+
+-- |Ignore any whitespace.
+ignoreWhitespace :: Monad m => Streamer m ()
+ignoreWhitespace = BiConduitM (Just <$> ignoreWhitespaceP) return
+
+elementP :: MonadThrow m => C.Sink X.Event m (Maybe X.Element)
+elementP = C.mapInput (Nothing, ) (Just . snd) U.elementFromEvents
+
+elementR :: Monad m => X.Element -> C.Source m X.Event
+-- elementR = CL.sourceList . U.elementToEvents)
+elementR (X.Element n a b) = do
+  C.yield $ X.EventBeginElement n a
+  mapM_ nodeR b
+  C.yield $ X.EventEndElement n
+
+-- |Pass an element, failing if the next item is not an element, ignoring any leading whitespace (like 'tag').
+passElement :: MonadThrow m => Streamer m X.Element
+passElement = BiConduitM
+  (ignoreWhitespaceP >> elementP)
+  (CL.sourceList . U.elementToEvents)
+
+nodeP :: MonadThrow m => C.Sink X.Event m (Maybe X.Node)
+nodeP = do
+  x <- C.await
+  case x of
+    Just e@X.EventBeginElement{} -> C.leftover e >> fmap X.NodeElement <$> elementP
+    Just (X.EventInstruction i) -> return $ Just $ X.NodeInstruction i
+    Just (X.EventContent c) -> return $ Just $ X.NodeContent c
+    Just (X.EventComment t) -> return $ Just $ X.NodeComment t
+    Just (X.EventCDATA t) -> return $ Just $ X.NodeContent $ X.ContentText t
+    Just e -> Nothing <$ C.leftover e
+    Nothing -> return Nothing
+
+nodeR :: Monad m => X.Node -> C.Source m X.Event
+nodeR (X.NodeElement e)     = elementR e
+nodeR (X.NodeInstruction i) = C.yield $ X.EventInstruction i
+nodeR (X.NodeContent c)     = C.yield $ X.EventContent c
+nodeR (X.NodeComment t)     = C.yield $ X.EventComment t
+
+-- |Pass any single node.
+-- Unlike all the other parsers, this does not ignore whitespace, but returns it as-is.
+passNode :: MonadThrow m => Streamer m X.Node
+passNode = BiConduitM nodeP nodeR
