@@ -131,13 +131,12 @@ produceParse f l = isJust p Q.==> check where
   produce (Const _) x = case unsafeCoerce x of { ~(TreeFree j) -> j }
 
 joinSorted :: (Show a, Ord a) => Maybe a -> Free (Const a) b -> (Maybe a, Q.Property)
-joinSorted b t@(Transform _ _) = (b, bad t)
-joinSorted b c@(Choose _ _) = (b, bad c)
 joinSorted b (Join p q) = (qb, pr Q..&&. qr) where
   (pb, pr) = joinSorted b p
   (qb, qr) = joinSorted pb q
 joinSorted b (Free (Const x)) = (Just x, Q.counterexample (show x ++ " < " ++ show b) $ all (x >=) b)
 joinSorted b Empty = (b, ok)
+joinSorted b o = (b, bad o)
 
 chooseSorted :: (Show a, Ord a) => Free (Const a) b -> Q.Property
 chooseSorted t@(Transform _ _) = bad t
