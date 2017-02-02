@@ -8,12 +8,16 @@ module Text.XML.Stream.Invertible
   , Streamer
   , streamerParser
   , streamerRender
+    -- ** Error checking
+  , force
+  , convert
 
     -- * Event processing
-  , force
     -- ** Text content
   , content
   , requireContent
+  , stringContent
+  , readShowContent
     -- ** Tags
     -- *** Tags with content
   , tag
@@ -31,7 +35,7 @@ module Text.XML.Stream.Invertible
   , ignoreTree
   , ignoreTreeName
   , ignoreAllTrees
-  , ignoreEverything
+  , ignoreNodes
 
     -- * Attribute parsing
   , AttrStreamer(..)
@@ -42,6 +46,7 @@ module Text.XML.Stream.Invertible
   , ignoreWhitespace
   , passElement
   , passNode
+  , passNodes
   ) where
 
 import           Control.Applicative (empty)
@@ -56,6 +61,7 @@ import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import           Data.Void (absurd)
 import qualified Data.XML.Types as X
+import           Text.Read (readEither)
 import qualified Text.XML.Stream.Parse as P
 import qualified Text.XML.Stream.Render as R
 import qualified Text.XML.Unresolved as U
@@ -63,7 +69,8 @@ import qualified Text.XML.Unresolved as U
 import           Data.Conduit.Invertible
 
 -- |Combine a parser and a generator.
--- Note that all parsers may fail, so that they can be combined using 'MonoidalAlt' (and use 'optionalI' to test).
+-- Note that all 'BiConduitM' parsers may fail so that they can be combined using 'MonoidalAlt' (e.g., made optional with 'optionalI').
+-- However, XML parsers can also throw errors using 'MonadThrow', and these errors are not recoverable.
 type Streamer m = SourceSink m X.Event
 
 streamerParser :: Streamer m a -> C.Sink X.Event m (Maybe a)
@@ -78,9 +85,20 @@ justIf p x
   | otherwise = Nothing
 
 -- |Apply 'P.force', forcing a 'Streamer' to succeed and throwing an error if not.
--- (This is not encoded in the type because 'BiConduitM's can always fail.)
+-- (This is not encoded in the type because 'BiConduitM's can always fail, although 'force' never does.)
 force :: MonadThrow m => String -> Streamer m a -> Streamer m a
 force e (BiConduitM p r) = BiConduitM (Just <$> P.force e p) r
+
+-- |Attempt to convert a value, throwing an (unrecoverable) error message on 'Left'.
+-- This is like a partial version of '>$<'.
+convert :: MonadThrow m
+  => (a -> Either String b) -- ^Parsing convert function, either an error message or successful result
+  -> (b -> a) -- ^Inverse render function
+  -> Streamer m a -- ^Streamer to convert
+  -> Streamer m b
+convert f g (BiConduitM p r) = BiConduitM
+  (mapM (either (`P.force` return Nothing) return . f) =<< p)
+  (r . g)
 
 -- |Take/give a next piece of text content, empty if there is none (never fails: 'P.content' and 'R.content')
 content :: MonadThrow m => Streamer m T.Text
@@ -89,6 +107,14 @@ content = BiConduitM (Just <$> P.content) R.content
 -- |Require a non-empty piece of text content, failing if there is none ('P.contentMaybe' and 'R.content')
 requireContent :: MonadThrow m => Streamer m T.Text
 requireContent = BiConduitM P.contentMaybe R.content
+
+-- |Process 'content' as a 'String'.
+stringContent :: MonadThrow m => Streamer m String
+stringContent = (T.unpack :<->: T.pack) >$< content
+
+-- |Use primitive 'Read' and 'Show' instances to process 'content'.
+readShowContent :: (Read a, Show a, MonadThrow m) => Streamer m a
+readShowContent = convert readEither show stringContent
 
 -- |Require a tag, providing handlers for attributes and body.
 -- Both of the handlers are essentially 'force'd, so that this will throw an error if either fail.
@@ -183,7 +209,7 @@ ignoreAllTags = ignoreTag (const True)
 -- The whole action fails iff the next tag's name does not match.
 ignoreTree :: MonadThrow m => (X.Name -> Bool) -> Streamer m X.Name 
 ignoreTree np = BiConduitM
-  (P.tag (justIf np) (<$ P.ignoreAttrs) (<$ ignoreEverythingP))
+  (P.tag (justIf np) (<$ P.ignoreAttrs) (<$ ignoreNodesP))
   (\n -> when (np n) $ emptyTagR n)
 
 -- |Require a tag with the given name, ignoring any attributes and children recursively.
@@ -199,12 +225,12 @@ ignoreAllTrees :: MonadThrow m => Streamer m X.Name
 ignoreAllTrees = ignoreTree (const True)
 
 -- this seems inefficient, but it's what Parse does.
-ignoreEverythingP :: MonadThrow m => C.Sink X.Event m ()
-ignoreEverythingP = void $ P.many P.ignoreAllTreesContent
+ignoreNodesP :: MonadThrow m => C.Sink X.Event m ()
+ignoreNodesP = void $ P.many' $ return Nothing
 
 -- |Ignore any remaining tags and content, producing nothing.
-ignoreEverything :: MonadThrow m => Streamer m ()
-ignoreEverything = BiConduitM (Just <$> ignoreEverythingP) return
+ignoreNodes :: MonadThrow m => Streamer m ()
+ignoreNodes = BiConduitM (Just <$> ignoreNodesP) return
 
 
 -- |Combine 'P.AttrParser' and generated 'R.Attributes'.
@@ -291,3 +317,9 @@ nodeR (X.NodeComment t)     = C.yield $ X.EventComment t
 -- Unlike all the other parsers, this does not ignore whitespace, but returns it as-is.
 passNode :: MonadThrow m => Streamer m X.Node
 passNode = BiConduitM nodeP nodeR
+
+-- |Pass a list of nodes (i.e., arbitrary content).
+-- Equivalent to @'manyI' 'passNode'@.
+-- This never fails (but it can throw errors).
+passNodes :: MonadThrow m => Streamer m [X.Node]
+passNodes = BiConduitM (Just <$> P.many (C.toConsumer nodeP)) (mapM_ nodeR)
