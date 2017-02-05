@@ -22,6 +22,7 @@ flag xml
 library
   exposed-modules:
     Data.Conduit.Invertible
+    Data.Conduit.Flush
   build-depends:
     base >= 4.8 && <5,
     conduit,

@@ -19,13 +19,15 @@ module Data.Conduit.Invertible
   , pass
   , predicate
   , exactly
+  , partial
   ) where
 
 import           Control.Applicative (liftA2, (*>))
 import           Control.Invertible.Monoidal
-import           Control.Monad (void, when)
+import           Control.Monad (void, when, guard)
 import           Data.Conduit
 import qualified Data.Invertible as I
+import           Data.Maybe (isNothing)
 import           Data.Void (Void, absurd)
 
 -- |Combine two conduits that are inverses of each other: one processes a stream to produce a final value, and the other takes that value to generate a stream.
@@ -118,4 +120,12 @@ predicate f = BiConduitM
 
 -- |Only take/give a single value, failing on anything else.
 exactly :: (Eq a, Monad m) => a -> BiConduitM i o m a ()
-exactly y = constI y $ predicate (y ==)
+exactly y = partial (guard . (y ==)) (const y)
+-- exactly y = constI y $ predicate (y ==)
+
+-- |Only take values that map to 'Just', and give the result of the reverse mapping.
+-- This is like the partial version of @('>$<' 'pass')@.
+partial :: Monad m => (a -> Maybe b) -> (b -> a) -> BiConduitM i o m a b
+partial f g = BiConduitM
+  (foldMapM (\x -> let y = f x in y <$ when (isNothing y) (leftover x)) =<< await)
+  (yield . g)
