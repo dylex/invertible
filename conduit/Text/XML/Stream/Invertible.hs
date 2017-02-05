@@ -73,8 +73,9 @@ import           Data.Conduit.Invertible
 -- However, XML parsers can also throw errors using 'MonadThrow', and these errors are not recoverable.
 type Streamer m = SourceSink m X.Event
 
-streamerParser :: Streamer m a -> C.Sink X.Event m (Maybe a)
-streamerParser = biSink
+-- |Extract a parser from a 'Streamer', throwing the given error message if it fails.
+streamerParser :: MonadThrow m => String -> Streamer m a -> C.Sink X.Event m a
+streamerParser e = P.force e . biSink
 
 streamerRender :: Streamer m a -> a -> C.Source m X.Event
 streamerRender = biSource
