@@ -2,6 +2,7 @@
 -- Note that these focus on manipulating the generated result (@r@ in "Data.Conduit"), not the streams themselves.
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
 module Data.Conduit.Invertible
   ( BiConduitM(..)
@@ -44,7 +45,7 @@ instance I.Functor (BiConduitM i o m a) where
 instance Monoidal (BiConduitM i o m a) where
   unit = BiConduitM (pure $ Just ()) return
   BiConduitM ca pa >*< BiConduitM cb pb = BiConduitM
-    (liftA2 pairADefault ca cb)
+    (maybe (return Nothing) (\a -> fmap (a, ) <$> cb) =<< ca)
     (\(a, b) -> pa a *> pb b)
 
 instance MonoidalAlt (BiConduitM i o m a) where
