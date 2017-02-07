@@ -1,5 +1,6 @@
 -- |
 -- Convenient construction of bidirectional functions using case-like syntax.
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell, Trustworthy #-}
 module Data.Invertible.TH
   ( biCase
@@ -16,9 +17,16 @@ import Data.Typeable (cast)
 import Language.Haskell.Meta.Parse (parsePat)
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH.Quote (QuasiQuoter(..))
+#if MIN_VERSION_base(4,9,0)
 import Text.Read.Lex (isSymbolChar)
+#endif
 
 import Data.Invertible.Bijection
+
+#if !MIN_VERSION_base(4,9,0)
+isSymbolChar :: Char -> Bool
+isSymbolChar = (`elem` "!#$%&*+./<=>?@\\^|-~:")
+#endif
 
 split :: String -> String -> [String]
 split _ [] = []
