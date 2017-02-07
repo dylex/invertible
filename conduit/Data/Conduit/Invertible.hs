@@ -44,13 +44,13 @@ instance I.Functor (BiConduitM i o m a) where
 
 instance Monoidal (BiConduitM i o m a) where
   unit = BiConduitM (pure $ Just ()) return
-  BiConduitM ca pa >*< BiConduitM cb pb = BiConduitM
+  BiConduitM ca pa >*< ~(BiConduitM cb pb) = BiConduitM
     (maybe (return Nothing) (\a -> fmap (a, ) <$> cb) =<< ca)
     (\(a, b) -> pa a *> pb b)
 
 instance MonoidalAlt (BiConduitM i o m a) where
   zero = BiConduitM (pure Nothing) (return . absurd)
-  BiConduitM ca pa >|< BiConduitM cb pb = BiConduitM
+  BiConduitM ca pa >|< ~(BiConduitM cb pb) = BiConduitM
     (maybe (fmap Right <$> cb) (return . Just . Left) =<< ca)
     (either pa pb)
 
