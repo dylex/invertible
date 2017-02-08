@@ -21,10 +21,12 @@ flag xml
 
 library
   exposed-modules:
+    Data.Conduit.Arrow
     Data.Conduit.Invertible
     Data.Conduit.Flush
   build-depends:
     base >= 4.8 && <5,
+    transformers,
     conduit,
     invertible
   default-language:    Haskell2010
