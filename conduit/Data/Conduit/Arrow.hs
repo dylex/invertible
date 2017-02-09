@@ -1,3 +1,5 @@
+-- |Various 'Arrow' instances for "Data.Conduit"s.
+-- The newtype wrappers here are somewhat similar to the types provided by old conduit versions (pre-0.4).
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -10,15 +12,26 @@ module Data.Conduit.Arrow
   , ArrSink
   ) where
 
+import           Control.Applicative (liftA2)
 import           Control.Arrow (Arrow(..), ArrowZero(..), ArrowPlus(..), ArrowChoice(..), Kleisli)
 import qualified Control.Category as Cat
-import           Control.Monad (ap)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Conduit
 import qualified Data.Conduit.Internal as C
 import qualified Data.Conduit.List as CL
-import           Data.Void (Void)
+import           Data.Void (Void, absurd)
 
+nop :: Applicative a => a ()
+nop = pure ()
+
+feedInput :: C.Pipe l i o u m r -> Either u i -> C.Pipe l i o u m r
+feedInput (C.NeedInput f e) = either e f
+feedInput p = const p
+
+needInput :: (Either u i -> C.Pipe l i o u m r) -> C.Pipe l i o u m r
+needInput f = C.NeedInput (f . Right) (f . Left)
+
+-- |A 'Conduit' represented as an arrow from input stream to output stream.
 newtype ArrConduit   m a b = ArrConduit{ arrConduit :: Conduit a m b }
 
 instance Monad m => Functor (ArrConduit m a) where
@@ -26,11 +39,33 @@ instance Monad m => Functor (ArrConduit m a) where
 
 instance Monad m => Applicative (ArrConduit m a) where
   pure = ArrConduit . yield
-  (<*>) = ap
+  -- (<*>) = ap
+  -- |Functions from the first conduit are applied greedily to output from the second conduit.
+  -- There is a slight left bias, where input is provided to the function conduit first.
+  ArrConduit (C.ConduitM a0) <*> ArrConduit (C.ConduitM b0) = ArrConduit $ C.ConduitM $ \rest -> let
+    go z _ (C.Done _) (C.Done _) = C.PipeM (rest <$> z)
+    go z s (C.PipeM a) b = C.PipeM (og z s b <$> a)
+    go z s a (C.PipeM b) = C.PipeM (go z s a <$> b)
+    go z _ (C.HaveOutput a z' s) b = go (z >> z') (Just s) a b
+    go z (Just s) a (C.HaveOutput b z' x) = C.HaveOutput (go nop (Just s) a b) (z >> z') (s x)
+    go z s (C.Leftover a l) b = C.Leftover (go z s a b) l
+    go z s (C.NeedInput f e) b = needInput $ og z s b . either e f
+    go z s a (C.Leftover b l) = C.Leftover (go z s a b) l
+    go z s a (C.NeedInput f e) = needInput $ go z s a . either e f
+    go z Nothing a@(C.Done _) (C.HaveOutput b z' _) = go (z >> z') Nothing a b
+    og z = flip . go z
+    in go nop Nothing
+      (a0 C.Done)
+      (b0 C.Done)
 
 instance Monad m => Monad (ArrConduit m a) where
-  -- second conduit gets no input...
-  ArrConduit c >>= f = ArrConduit $ c .| awaitForever ((return () .|) . arrConduit . f)
+  ArrConduit (C.ConduitM a0) >>= f = ArrConduit $ C.ConduitM $ \rest -> let
+    go (C.Done u) = rest u
+    go (C.PipeM m) = C.PipeM (go <$> m)
+    go (C.HaveOutput a z x) = C.unConduitM (arrConduit (f x)) (\() -> C.PipeM (go a <$ z))
+    go (C.NeedInput a e) = C.NeedInput (go . a) (go . e)
+    go (C.Leftover a l) = C.Leftover (go a) l
+    in go (a0 C.Done)
 
 instance Monad m => Cat.Category (ArrConduit m) where
   id = ArrConduit $ awaitForever yield
@@ -75,34 +110,31 @@ instance Monad m => Arrow (ArrConduit m) where
   f *** g = first f Cat.>>> second g
 
 instance Monad m => ArrowZero (ArrConduit m) where
-  zeroArrow = ArrConduit $ return ()
+  zeroArrow = ArrConduit nop
 
 instance Monad m => ArrowPlus (ArrConduit m) where
   ArrConduit f <+> ArrConduit g = ArrConduit $ f >> g
 
 instance Monad m => ArrowChoice (ArrConduit m) where
   ArrConduit (C.ConduitM l0) +++ ArrConduit (C.ConduitM r0) = ArrConduit $ C.ConduitM $ \rest -> let
-    go _ (C.Done _) (C.Done _)  = rest ()
-    go e (C.PipeM l) r          = C.PipeM      (og e r <$> l)
-    go e (C.HaveOutput l f o) r = C.HaveOutput (go e l r) f (Left o)
-    go e (C.Leftover l i) r     = C.Leftover   (go e l r)   (Left i)
-    go e l (C.PipeM r)          = C.PipeM      (go e l <$> r)
-    go e l (C.HaveOutput r f o) = C.HaveOutput (go e l r) f (Right o)
-    go e l (C.Leftover r i)     = C.Leftover   (go e l r)   (Right i)
-    go False l r = C.NeedInput
+    go (C.Done _) (C.Done _)  = rest ()
+    go (C.PipeM l) r          = C.PipeM      (og r <$> l)
+    go l (C.PipeM r)          = C.PipeM      (go l <$> r)
+    go (C.HaveOutput l f o) r = C.HaveOutput (go l r) f (Left o)
+    go l (C.HaveOutput r f o) = C.HaveOutput (go l r) f (Right o)
+    go (C.Leftover l i) r     = C.Leftover   (go l r)   (Left i)
+    go l (C.Leftover r i)     = C.Leftover   (go l r)   (Right i)
+    go l r = C.NeedInput
       (either
-        (og False r . feed l)
-        (go False l . feed r))
-      (\e -> go True
-        (end l e)
-        (end r e))
-    go True _ _ = rest ()
-    og = flip . go
-    feed (C.NeedInput f _) x = f x
-    feed p _ = p
-    end (C.NeedInput _ e) x = e x
-    end p _ = p
-    in go False (l0 C.Done) (r0 C.Done)
+        (og r . feedInput l . Right)
+        (go l . feedInput r . Right))
+      (\e -> go
+        (feedInput l $ Left e)
+        (feedInput r $ Left e))
+    og = flip go
+    in go
+      (l0 C.Done)
+      (r0 C.Done)
 
 -- newtype ArrProduce i m a b = ArrProduce{ arrProduce :: a -> Conduit i m b }
 type ArrProduce i m = Kleisli (ArrConduit m i)
@@ -114,4 +146,25 @@ type ArrSink = ArrConsume Void
 
 instance Monad m => Cat.Category (ArrConsume o m) where
   id = ArrConsume $ MaybeT await
-  ArrConsume _f . ArrConsume _g = error "TODO"
+  ArrConsume (MaybeT f) . ArrConsume (MaybeT g) = ArrConsume $ MaybeT $ g >>= (.| f) . mapM_ yield
+
+instance Monad m => Arrow (ArrConsume o m) where
+  arr f = f <$> Cat.id
+  ArrConsume (MaybeT (C.ConduitM l0)) *** ArrConsume (MaybeT (C.ConduitM r0)) = ArrConsume $ MaybeT $ C.ConduitM $ \rest -> let
+    go (C.Done a) (C.Done b) = rest $ liftA2 (,) a b
+    go (C.PipeM mx) y = C.PipeM (og y <$> mx)
+    go x (C.PipeM my) = C.PipeM (go x <$> my)
+    go (C.HaveOutput x f o) y = C.HaveOutput (go x y) f o
+    go x (C.HaveOutput y f o) = C.HaveOutput (go x y) f o
+    go (C.Leftover _ i) _ = absurd i
+    go _ (C.Leftover _ i) = absurd i
+    go l r = needInput $ \x -> go
+      (feedInput l $ fst <$> x)
+      (feedInput r $ snd <$> x)
+    og = flip go
+    in go
+      (C.injectLeftovers $ l0 C.Done)
+      (C.injectLeftovers $ r0 C.Done)
+
+instance Monad m => ArrowZero (ArrConsume o m) where
+  zeroArrow = ArrConsume $ MaybeT $ return Nothing
