@@ -1,20 +1,25 @@
 -- |Various 'Arrow' instances for "Data.Conduit"s.
 -- The newtype wrappers here are somewhat similar to the types provided by old conduit versions (pre-0.4).
+-- Arrows and Monads definied here function much like the list monad when dealing with multiple inputs and outputs, producing concatenation and cross-products.
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module Data.Conduit.Arrow
-  ( ArrConduit(..)
-  , ArrProduce
+  ( ArrConduit(..), conduitArr
+  , ArrProduce, arrProduce, produceArr
   , ArrSource
-  , ArrConsume(..)
+  , ArrConsume(..), arrConsume, consumeArr
+  , consumeArr'
   , ArrSink
   ) where
 
-import           Control.Applicative (liftA2)
-import           Control.Arrow (Arrow(..), ArrowZero(..), ArrowPlus(..), ArrowChoice(..), Kleisli)
+import           Control.Applicative (Alternative(..), liftA2)
+import           Control.Arrow (Arrow(..), ArrowZero(..), ArrowPlus(..), ArrowChoice(..), Kleisli(..))
 import qualified Control.Category as Cat
+import           Control.Monad (MonadPlus(..), ap)
+import           Control.Monad.Catch (MonadThrow(..), MonadCatch(..))
+import           Control.Monad.IO.Class (MonadIO(..))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Conduit
 import qualified Data.Conduit.Internal as C
@@ -31,32 +36,25 @@ feedInput p = const p
 needInput :: (Either u i -> C.Pipe l i o u m r) -> C.Pipe l i o u m r
 needInput f = C.NeedInput (f . Right) (f . Left)
 
--- |A 'Conduit' represented as an arrow from input stream to output stream.
-newtype ArrConduit   m a b = ArrConduit{ arrConduit :: Conduit a m b }
+-- |A 'Conduit' represented as an 'Arrow' from input stream to output stream.
+-- Composition is provided by 'fuse', with 'CL.map' as the base transformer.
+-- '***' generates cross-products.
+-- Monad operations function just like list monads, where 'join' is like 'concat', and inputs may be consumed by either inner or outer conduit (but not both).
+newtype ArrConduit   m a b = ArrConduit
+  { arrConduit :: Conduit a m b -- ^Unwrap an 'ArrConduit'
+  }
+
+-- |Wrap an 'ArrConduit'
+conduitArr :: Conduit a m b -> ArrConduit m a b
+conduitArr = ArrConduit
+{-# INLINE conduitArr #-}
 
 instance Monad m => Functor (ArrConduit m a) where
   fmap f (ArrConduit c) = ArrConduit $ mapOutput f c
 
 instance Monad m => Applicative (ArrConduit m a) where
   pure = ArrConduit . yield
-  -- (<*>) = ap
-  -- |Functions from the first conduit are applied greedily to output from the second conduit.
-  -- There is a slight left bias, where input is provided to the function conduit first.
-  ArrConduit (C.ConduitM a0) <*> ArrConduit (C.ConduitM b0) = ArrConduit $ C.ConduitM $ \rest -> let
-    go z _ (C.Done _) (C.Done _) = C.PipeM (rest <$> z)
-    go z s (C.PipeM a) b = C.PipeM (og z s b <$> a)
-    go z s a (C.PipeM b) = C.PipeM (go z s a <$> b)
-    go z _ (C.HaveOutput a z' s) b = go (z >> z') (Just s) a b
-    go z (Just s) a (C.HaveOutput b z' x) = C.HaveOutput (go nop (Just s) a b) (z >> z') (s x)
-    go z s (C.Leftover a l) b = C.Leftover (go z s a b) l
-    go z s (C.NeedInput f e) b = needInput $ og z s b . either e f
-    go z s a (C.Leftover b l) = C.Leftover (go z s a b) l
-    go z s a (C.NeedInput f e) = needInput $ go z s a . either e f
-    go z Nothing a@(C.Done _) (C.HaveOutput b z' _) = go (z >> z') Nothing a b
-    og z = flip . go z
-    in go nop Nothing
-      (a0 C.Done)
-      (b0 C.Done)
+  (<*>) = ap
 
 instance Monad m => Monad (ArrConduit m a) where
   ArrConduit (C.ConduitM a0) >>= f = ArrConduit $ C.ConduitM $ \rest -> let
@@ -66,6 +64,22 @@ instance Monad m => Monad (ArrConduit m a) where
     go (C.NeedInput a e) = C.NeedInput (go . a) (go . e)
     go (C.Leftover a l) = C.Leftover (go a) l
     in go (a0 C.Done)
+  fail = ArrConduit . fail
+
+instance Monad m => Alternative (ArrConduit m a) where
+  empty = ArrConduit nop
+  ArrConduit f <|> ArrConduit g = ArrConduit $ f >> g
+
+instance Monad m => MonadPlus (ArrConduit m a)
+
+instance MonadThrow m => MonadThrow (ArrConduit m a) where
+  throwM = ArrConduit . throwM
+
+instance MonadCatch m => MonadCatch (ArrConduit m a) where
+  catch (ArrConduit m) f = ArrConduit $ catch m (arrConduit . f)
+
+instance MonadIO m => MonadIO (ArrConduit m a) where
+  liftIO f = ArrConduit $ liftIO f >>= yield
 
 instance Monad m => Cat.Category (ArrConduit m) where
   id = ArrConduit $ awaitForever yield
@@ -136,12 +150,62 @@ instance Monad m => ArrowChoice (ArrConduit m) where
       (l0 C.Done)
       (r0 C.Done)
 
--- newtype ArrProduce i m a b = ArrProduce{ arrProduce :: a -> Conduit i m b }
+-- |A 'Kleisli' 'Arrow' from arguments to conduit outputs.
+-- 'yield' provides an identity, and composition is like 'concatMap'.
 type ArrProduce i m = Kleisli (ArrConduit m i)
+
+-- |Unwrap an 'ArrProduce'
+arrProduce :: ArrProduce i m a b -> a -> Conduit i m b
+arrProduce (Kleisli f) = arrConduit . f
+{-# INLINE arrProduce #-}
+
+-- |Wrap an 'ArrProduce'
+produceArr :: (a -> Conduit i m b) -> ArrProduce i m a b
+produceArr f = Kleisli (ArrConduit . f)
+{-# INLINE produceArr #-}
+
+-- |A specialized 'ArrProduce' that consumes no inputs.
 type ArrSource m = ArrProduce () m
 
-newtype ArrConsume o m a b = ArrConsume{ arrConsume :: MaybeT (ConduitM a o m) b }
-  deriving (Functor, Applicative, Monad) -- MonadThrow, ...
+instance Monad m => Functor (ArrProduce i m a) where
+  fmap f (Kleisli a) = Kleisli $ fmap f . a
+
+instance Monad m => Applicative (ArrProduce i m a) where
+  pure a = Kleisli $ const $ pure a
+  Kleisli a <*> Kleisli b = Kleisli $ \x -> a x <*> b x
+
+instance Monad m => Monad (ArrProduce i m a) where
+  Kleisli a >>= f = Kleisli $ \x -> a x >>= flip (runKleisli . f) x
+  fail = Kleisli . const . fail
+
+instance Monad m => Alternative (ArrProduce i m a) where
+  empty = Kleisli $ const empty
+  Kleisli f <|> Kleisli g = Kleisli $ \x -> f x <|> g x
+
+instance Monad m => MonadPlus (ArrProduce i m a)
+
+-- |A stream processor 'Arrow' from conduit inputs to final result, which may be empty.
+-- 'await' provides an identity, and composition provides (at most) a single input to the outer conduit.
+-- Monad instances are equivalent to 'ConduitM'.
+newtype ArrConsume o m a b = ArrConsume (MaybeT (ConduitM a o m) b)
+  deriving (Functor, Applicative, Monad, Alternative, MonadPlus, MonadThrow, MonadCatch, MonadIO)
+
+-- |Unwrap an 'ArrConsume'
+arrConsume :: ArrConsume o m a b -> ConduitM a o m (Maybe b)
+arrConsume (ArrConsume (MaybeT c)) = c
+{-# INLINE arrConsume #-}
+
+-- |Wrap an 'ArrConsume'
+consumeArr :: ConduitM a o m (Maybe b) -> ArrConsume o m a b
+consumeArr = ArrConsume . MaybeT
+{-# INLINE consumeArr #-}
+
+-- |Wrap a successful 'ArrConsume'
+consumeArr' :: ConduitM a o m b -> ArrConsume o m a b
+consumeArr' = ArrConsume . MaybeT . fmap Just
+{-# INLINE consumeArr' #-}
+
+-- |A specialized 'ArrConsume' that produces no outputs.
 type ArrSink = ArrConsume Void
 
 instance Monad m => Cat.Category (ArrConsume o m) where
