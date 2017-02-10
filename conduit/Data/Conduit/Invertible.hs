@@ -29,10 +29,12 @@ module Data.Conduit.Invertible
   , partial
   ) where
 
-import           Control.Applicative (liftA2, (*>))
+import           Control.Applicative (liftA2)
+import           Control.Arrow (Kleisli(..))
 import qualified Control.Category as Cat
 import           Control.Invertible.Monoidal
 import           Control.Monad (void, when, guard)
+import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Conduit
 import qualified Data.Invertible as I
 import           Data.Maybe (isNothing)
@@ -103,11 +105,11 @@ type ProducerConsumer m a b = forall i o . ConsumeProduce i o m a b
 
 -- |Specialization of 'biConsume'
 biConsumer :: ProducerConsumer m a b -> Consumer a m (Maybe b)
-biConsumer = arrConsume . biConsume
+biConsumer (ConsumeProduce (ArrConsume (MaybeT c)) _) = c
 
 -- |Specialization of 'biProduce'
 biProducer :: ProducerConsumer m a b -> b -> Producer m a
-biProducer = arrProduce . biProduce
+biProducer (ConsumeProduce _ (Kleisli p)) = arrConduit . p
 
 -- |Combine 'toConsumer' and 'toProducer'.
 toProducerConsumer :: Monad m => SourceSink m a b -> ProducerConsumer m a b
