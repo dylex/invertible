@@ -149,6 +149,8 @@ instance Monad m => ArrowChoice (ArrConduit m) where
     in go
       (l0 C.Done)
       (r0 C.Done)
+  left = (+++ Cat.id)
+  right = (Cat.id +++)
 
 -- |A 'Kleisli' 'Arrow' from arguments to conduit outputs.
 -- 'yield' provides an identity, and composition is like 'concatMap'.
@@ -229,6 +231,8 @@ instance Monad m => Arrow (ArrConsume o m) where
     in go
       (C.injectLeftovers $ l0 C.Done)
       (C.injectLeftovers $ r0 C.Done)
+  first = (*** Cat.id)
+  second = (Cat.id ***)
 
 instance Monad m => ArrowZero (ArrConsume o m) where
   zeroArrow = ArrConsume $ MaybeT $ return Nothing
