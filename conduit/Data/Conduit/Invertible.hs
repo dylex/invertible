@@ -70,7 +70,7 @@ instance I.Functor (ConsumeProduce i o m a) where
 instance Monoidal (ConsumeProduce i o m a) where
   unit = biConsumeProduce (pure $ Just ()) return
   ConsumeProduce ca pa >*< ~(ConsumeProduce cb pb) = biConsumeProduce
-    (arrConsume ca >>= maybe (return Nothing) (\a -> fmap (a, ) <$> arrConsume cb))
+    (arrConsume ca >>= maybe (return Nothing) (\a -> fmap (a, ) <$> arrConsume cb)) -- FIXME may consume input!
     (\(a, b) -> arrProduce pa a *> arrProduce pb b)
 
 instance MonoidalAlt (ConsumeProduce i o m a) where
