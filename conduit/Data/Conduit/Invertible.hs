@@ -30,6 +30,7 @@ module Data.Conduit.Invertible
   ) where
 
 import           Control.Applicative (liftA2, (*>))
+import qualified Control.Category as Cat
 import           Control.Invertible.Monoidal
 import           Control.Monad (void, when, guard)
 import           Data.Conduit
@@ -54,6 +55,10 @@ data ConsumeProduce i o m a b = ConsumeProduce
 biConsumeProduce :: ConduitM a o m (Maybe b) -> (b -> Conduit i m a) -> ConsumeProduce i o m a b
 biConsumeProduce c p = ConsumeProduce (consumeArr c) (produceArr p)
 {-# INLINE biConsumeProduce #-}
+
+instance Monad m => Cat.Category (ConsumeProduce i o m) where
+  id = ConsumeProduce Cat.id Cat.id
+  ConsumeProduce cf pf . ConsumeProduce cg pg = ConsumeProduce (cf Cat.. cg) (pg Cat.. pf)
 
 instance I.Functor (ConsumeProduce i o m a) where
   fmap (f I.:<->: g) (ConsumeProduce c p) = biConsumeProduce
@@ -131,7 +136,8 @@ biMapStream (f I.:<->: g) (ConsumeProduce c p) = biConsumeProduce
 foldMapM :: Monad m => (a -> m (Maybe b)) -> Maybe a -> m (Maybe b)
 foldMapM = maybe (return Nothing)
 
--- |Take/give a single value on the stream (the identity 'ConsumeProduce')
+-- |Take/give a single value on the stream.
+-- This is also 'Cat.id'.
 pass :: Monad m => ConsumeProduce i o m a a
 pass = biConsumeProduce await yield
 
