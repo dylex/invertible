@@ -24,20 +24,36 @@ source-repository head
 
 flag arrows
   description: Support the arrows package
+  manual: True
+  default: True
 flag HList
   description: Support the HList package
+  manual: True
+  default: True
 flag invariant
   description: Support the invariant package
+  manual: True
+  default: True
 flag lens
   description: Support the lens package
+  manual: True
+  default: True
 flag partial-isomorphisms
   description: Support the partial-isomorphisms package
+  manual: True
+  default: True
 flag Piso
   description: Support the Piso package
+  manual: True
+  default: True
 flag semigroupoids
   description: Support the semigroupoids package
+  manual: True
+  default: True
 flag TypeCompose
   description: Support the TypeCompose package
+  manual: True
+  default: True
 
 library
   other-modules:
