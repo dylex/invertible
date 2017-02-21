@@ -1,5 +1,5 @@
 name:                invertible
-version:             0.2.0.1
+version:             0.2.0.2
 synopsis:            bidirectional arrows, bijective functions, and invariant functors
 description:
   Representations and operations for bidirectional arrows (total isomorphisms: an
@@ -26,10 +26,6 @@ flag arrows
   description: Support the arrows package
   manual: True
   default: False
-flag HList
-  description: Support the HList package
-  manual: True
-  default: True
 flag invariant
   description: Support the invariant package
   manual: True
@@ -93,10 +89,6 @@ library
 
   if flag(arrows)
     build-depends: arrows
-  if flag(HList)
-    exposed-modules: Data.Invertible.HList
-    exposed-modules: Control.Invertible.Monoidal.HList
-    build-depends: HList == 0.4.*
   if flag(invariant)
     exposed-modules: Data.Invertible.Invariant
     build-depends: invariant

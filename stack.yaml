@@ -3,10 +3,6 @@ packages:
 - location: .
 - location: hxt
 - location: conduit
-flags:
-  invertible:
-    hlist: false
-    piso: false
 extra-deps:
 - Stream-0.4.7.2
 - arrows-0.4.4.1
