@@ -25,7 +25,7 @@ source-repository head
 flag arrows
   description: Support the arrows package
   manual: True
-  default: True
+  default: False
 flag HList
   description: Support the HList package
   manual: True
@@ -45,7 +45,7 @@ flag partial-isomorphisms
 flag Piso
   description: Support the Piso package
   manual: True
-  default: True
+  default: False
 flag semigroupoids
   description: Support the semigroupoids package
   manual: True
