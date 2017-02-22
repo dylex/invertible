@@ -94,20 +94,20 @@ pairADefault = liftA2 (,)
 (*<) :: Monoidal f => f () -> f a -> f a
 (*<) = liftI2 I.snd
 
-infixl 4 >*, >*<, *<
+infixr 5 >*, >*<, *<
 
 -- |Lift an (uncurried) bijection into a monoidal functor.
 liftI2 :: Monoidal f => ((a, b) <-> c) -> f a -> f b -> f c
 liftI2 f a b = f >$< (a >*< b)
 
 liftI3 :: Monoidal f => ((a, b, c) <-> d) -> f a -> f b -> f c -> f d
-liftI3 f a b c = f >$< (a >*< b >>*< c)
+liftI3 f a b c = f >$< (a >*<< b >*< c)
 
 liftI4 :: Monoidal f => ((a, b, c, d) <-> e) -> f a -> f b -> f c -> f d -> f e
-liftI4 f a b c d = f >$< (a >*< b >>*< c >>>*< d)
+liftI4 f a b c d = f >$< (a >*<<< b >*<< c >*< d)
 
 liftI5 :: Monoidal f => ((a, b, c, d, e) <-> g) -> f a -> f b -> f c -> f d -> f e -> f g
-liftI5 f a b c d e = f >$< (a >*< b >>*< c >>>*< d >>>>*< e)
+liftI5 f a b c d e = f >$< (a >*<<<< b >*<<< c >*<< d >*< e)
 
 (>>*<) :: Monoidal f => f (a, b) -> f c -> f (a, b, c)
 (>>*<) = liftI2 I.flatten2_1
@@ -118,7 +118,7 @@ liftI5 f a b c d e = f >$< (a >*< b >>*< c >>>*< d >>>>*< e)
 (>>>>*<) :: Monoidal f => f (a, b, c, d) -> f e -> f (a, b, c, d, e)
 (>>>>*<) = liftI2 I.flatten4_1
 
-infixl 4 >>*<, >>>*<, >>>>*<
+infixl 5 >>*<, >>>*<, >>>>*<
 
 (>*<<) :: Monoidal f => f a -> f (b, c) -> f (a, b, c)
 (>*<<) = liftI2 I.flatten1_2
@@ -129,12 +129,12 @@ infixl 4 >>*<, >>>*<, >>>>*<
 (>*<<<<) :: Monoidal f => f a -> f (b, c, d, e) -> f (a, b, c, d, e)
 (>*<<<<) = liftI2 I.flatten1_4
 
-infixr 3 >*<<, >*<<<, >*<<<<
+infixr 4 >*<<, >*<<<, >*<<<<
 
 (>>*<<) :: Monoidal f => f (a, b) -> f (c, d) -> f (a, b, c, d)
 (>>*<<) = liftI2 I.flatten2_2
 
-infix 3 >>*<<
+infix 4 >>*<<
 
 -- |A constant monoidal (like 'Control.Applicative.pure'), which always produces the same value and ignores everything.
 pureI :: Monoidal f => a -> f a
@@ -185,7 +185,7 @@ a >| b = (either id id :<->: Left) >$< (a >|< b)
 (|<) :: MonoidalAlt f => f a -> f a -> f a
 a |< b = (either id id :<->: Right) >$< (a >|< b)
 
-infixl 3 >|, >|<, |<
+infixr 3 >|, >|<, |<
 
 -- |Analogous to 'Control.Applicative.optional': always succeeds.
 optionalI :: MonoidalAlt f => f a -> f (Maybe a)
