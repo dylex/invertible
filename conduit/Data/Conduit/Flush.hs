@@ -2,10 +2,12 @@ module Data.Conduit.Flush
   ( flushWhen
   , flushAfter
   , flushEach
+  , unFlush
   ) where
 
 import           Data.Conduit
-import           Data.Monoid (Sum(..))
+import           Data.Foldable (fold)
+import           Data.Monoid ((<>), Sum(..))
 
 -- |Accumulate conduit values in a monoid and flush whenever the condition is true.
 -- @flushWhen monoid condition@ will flush first if @condition 'mempty'@ holds, but then only check condition after each value.
@@ -27,3 +29,10 @@ flushAfter w t = flushWhen (Sum . w) ((t <=) . getSum)
 -- Equivalent to @'flushAfter' (const 1)@.
 flushEach :: Monad m => Int -> Conduit a m (Flush a)
 flushEach = flushAfter (const 1)
+
+-- |Convert a monoid flush stream into a reduced stream, where concatenated values are produced for each 'Flush' (and possibly end of stream).
+unFlush :: (Monoid a, Monad m) => Conduit (Flush a) m a
+unFlush = run Nothing where
+  run x = maybe (mapM_ yield x) (next x) =<< await
+  next x Flush = yield (fold x) >> run Nothing
+  next x (Chunk y) = run $ Just $ maybe y (<> y) x
