@@ -6,25 +6,28 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module Data.Conduit.Arrow
-  ( ArrConduit(..), conduitArr
+  ( ArrConduit, arrConduit, conduitArr
   , ArrProduce, arrProduce, produceArr
   , ArrSource
-  , ArrConsume(..), arrConsume, consumeArr
+  , ArrConsume, arrConsume, consumeArr
   , consumeArr'
+  , tryBindConsume
+  , tryConsume
   , ArrSink
   ) where
 
 import           Control.Applicative (Alternative(..), liftA2)
 import           Control.Arrow (Arrow(..), ArrowZero(..), ArrowPlus(..), ArrowChoice(..), Kleisli(..))
 import qualified Control.Category as Cat
-import           Control.Monad (MonadPlus(..), ap)
+import           Control.Monad (MonadPlus(..), ap, when)
 import           Control.Monad.Catch (MonadThrow(..), MonadCatch(..))
 import           Control.Monad.IO.Class (MonadIO(..))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Conduit
 import qualified Data.Conduit.Internal as C
 import qualified Data.Conduit.List as CL
-import           Data.Void (Void, absurd)
+import           Data.Maybe (isNothing)
+import           Data.Void (Void)
 
 nop :: Applicative a => a ()
 nop = pure ()
@@ -186,9 +189,10 @@ instance Monad m => Alternative (ArrProduce i m a) where
 
 instance Monad m => MonadPlus (ArrProduce i m a)
 
--- |A stream processor 'Arrow' from conduit inputs to final result, which may be empty.
+-- |A stream processor 'Arrow' from conduit inputs to a possible final result.
 -- 'await' provides an identity, and composition provides (at most) a single input to the outer conduit.
--- Monad instances are equivalent to 'ConduitM'.
+-- 'Monad' instances are equivalent to 'ConduitM'.
+-- Note that failing 'ArrConsume' operations may still consume input, so the 'Alternative' instances may not do what you expect.
 newtype ArrConsume o m a b = ArrConsume (MaybeT (ConduitM a o m) b)
   deriving (Functor, Applicative, Monad, Alternative, MonadPlus, MonadThrow, MonadCatch, MonadIO)
 
@@ -207,30 +211,60 @@ consumeArr' :: ConduitM a o m b -> ArrConsume o m a b
 consumeArr' = ArrConsume . MaybeT . fmap Just
 {-# INLINE consumeArr' #-}
 
+-- |Run the given conduit, returing a reversed list of all the input consumed.
+withConsumedInput :: Functor m => ConduitM a o m b -> ConduitM a o m ([a], b)
+withConsumedInput (C.ConduitM c0) = C.ConduitM $ \rest -> let
+  go l (C.Done a) = rest (l, a)
+  go l (C.PipeM m) = C.PipeM (go l <$> m)
+  go l (C.HaveOutput x f o) = C.HaveOutput (go l x) f o
+  go (_i:l) (C.Leftover c i) = C.Leftover (go l c) i -- i == _i
+  go l (C.Leftover c i) = C.Leftover (go l c) i -- HRM!
+  go l (C.NeedInput f e) = C.NeedInput (\i -> go (i:l) $ f i) (go l . e)
+  in go [] $ c0 C.Done
+
+-- |Similar to '>>=' except if the second action fails, any input consumed by the first conduit only is returned in leftovers.
+-- Note that input consumed by the second action is never returned.
+tryBindConsume :: Functor m => ArrConsume o m a b -> (b -> ArrConsume o m a c) -> ArrConsume o m a c
+tryBindConsume (ArrConsume (MaybeT c)) f = ArrConsume $ MaybeT $ r =<< withConsumedInput c where
+  r (i, a) = do
+    b <- maybe (return Nothing) (arrConsume . f) a
+    when (isNothing b) $ mapM_ leftover i
+    return b
+
+-- |If the conduit fails (with 'Nothing'), make it return any consumed any input by producing leftovers instead.
+-- Equivalent to @(`'tryBindConsume'` return)@.
+tryConsume :: Functor m => ArrConsume o m a b -> ArrConsume o m a b
+tryConsume c = tryBindConsume c return
+
 -- |A specialized 'ArrConsume' that produces no outputs.
 type ArrSink = ArrConsume Void
 
 instance Monad m => Cat.Category (ArrConsume o m) where
   id = ArrConsume $ MaybeT await
-  ArrConsume (MaybeT f) . ArrConsume (MaybeT g) = ArrConsume $ MaybeT $ g >>= (.| f) . mapM_ yield
+  ArrConsume (MaybeT f) . ArrConsume (MaybeT g) = ArrConsume $ MaybeT $
+    maybe (return Nothing) ((.| f) . yield) =<< g
 
 instance Monad m => Arrow (ArrConsume o m) where
   arr f = f <$> Cat.id
   ArrConsume (MaybeT (C.ConduitM l0)) *** ArrConsume (MaybeT (C.ConduitM r0)) = ArrConsume $ MaybeT $ C.ConduitM $ \rest -> let
-    go (C.Done a) (C.Done b) = rest $ liftA2 (,) a b
-    go (C.PipeM mx) y = C.PipeM (og y <$> mx)
-    go x (C.PipeM my) = C.PipeM (go x <$> my)
-    go (C.HaveOutput x f o) y = C.HaveOutput (go x y) f o
-    go x (C.HaveOutput y f o) = C.HaveOutput (go x y) f o
-    go (C.Leftover _ i) _ = absurd i
-    go _ (C.Leftover _ i) = absurd i
-    go l r = needInput $ \x -> go
+    go _ (C.Done a) (C.Done b) = rest $ liftA2 (,) a b
+    go lo (C.PipeM mx) y = C.PipeM (og lo y <$> mx)
+    go lo x (C.PipeM my) = C.PipeM (go lo x <$> my)
+    go lo (C.HaveOutput x f o) y = C.HaveOutput (go lo x y) f o
+    go lo x (C.HaveOutput y f o) = C.HaveOutput (go lo x y) f o
+    go (Right (lr:lo)) (C.Leftover l ll) r = C.Leftover (go (Right lo) l r) (ll, lr)
+    go lo              (C.Leftover l ll) r = go (Left  (ll:either id (const []) lo)) l r
+    go (Left  (ll:lo)) l (C.Leftover r lr) = C.Leftover (go (Left  lo) l r) (ll, lr)
+    go lo              l (C.Leftover r lr) = go (Right (lr:either (const []) id lo)) l r
+    go (Left  (ll:lo)) (C.NeedInput f _) r = go (Left  lo) (f ll) r
+    go (Right (lr:lo)) l (C.NeedInput f _) = go (Right lo) l (f lr)
+    go lo l r = needInput $ \x -> go lo
       (feedInput l $ fst <$> x)
       (feedInput r $ snd <$> x)
-    og = flip go
-    in go
-      (C.injectLeftovers $ l0 C.Done)
-      (C.injectLeftovers $ r0 C.Done)
+    og = flip . go
+    in go (Left [])
+      (l0 C.Done)
+      (r0 C.Done)
   first = (*** Cat.id)
   second = (Cat.id ***)
 

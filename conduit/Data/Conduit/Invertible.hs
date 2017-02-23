@@ -34,7 +34,6 @@ import           Control.Arrow (Kleisli(..))
 import qualified Control.Category as Cat
 import           Control.Invertible.Monoidal
 import           Control.Monad (void, when, guard)
-import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Conduit
 import qualified Data.Invertible as I
 import           Data.Maybe (isNothing)
@@ -67,13 +66,13 @@ instance I.Functor (ConsumeProduce i o m a) where
     (fmap f <$> arrConsume c)
     (arrProduce p . g)
 
-instance Monoidal (ConsumeProduce i o m a) where
+instance Functor m => Monoidal (ConsumeProduce i o m a) where
   unit = biConsumeProduce (pure $ Just ()) return
-  ConsumeProduce ca pa >*< ~(ConsumeProduce cb pb) = biConsumeProduce
-    (arrConsume ca >>= maybe (return Nothing) (\a -> fmap (a, ) <$> arrConsume cb)) -- FIXME may consume input!
-    (\(a, b) -> arrProduce pa a *> arrProduce pb b)
+  ConsumeProduce ca pa >*< ~(ConsumeProduce cb pb) = ConsumeProduce
+    (tryBindConsume ca (\a -> (,) a <$> cb))
+    (produceArr $ \(a, b) -> arrProduce pa a *> arrProduce pb b)
 
-instance MonoidalAlt (ConsumeProduce i o m a) where
+instance Functor m => MonoidalAlt (ConsumeProduce i o m a) where
   zero = biConsumeProduce (pure Nothing) (return . absurd)
   ConsumeProduce ca pa >|< ~(ConsumeProduce cb pb) = biConsumeProduce
     (arrConsume ca >>= maybe (fmap Right <$> arrConsume cb) (return . Just . Left))
@@ -105,7 +104,7 @@ type ProducerConsumer m a b = forall i o . ConsumeProduce i o m a b
 
 -- |Specialization of 'biConsume'
 biConsumer :: ProducerConsumer m a b -> Consumer a m (Maybe b)
-biConsumer (ConsumeProduce (ArrConsume (MaybeT c)) _) = c
+biConsumer (ConsumeProduce c _) = arrConsume c
 
 -- |Specialization of 'biProduce'
 biProducer :: ProducerConsumer m a b -> b -> Producer m a
