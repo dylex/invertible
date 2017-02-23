@@ -11,7 +11,7 @@ module Data.Conduit.Arrow
   , ArrSource
   , ArrConsume, arrConsume, consumeArr
   , consumeArr'
-  , tryBindConsume
+  , (>>?=)
   , tryConsume
   , ArrSink
   ) where
@@ -192,7 +192,7 @@ instance Monad m => MonadPlus (ArrProduce i m a)
 -- |A stream processor 'Arrow' from conduit inputs to a possible final result.
 -- 'await' provides an identity, and composition provides (at most) a single input to the outer conduit.
 -- 'Monad' instances are equivalent to 'ConduitM'.
--- Note that failing 'ArrConsume' operations may still consume input, so the 'Alternative' instances may not do what you expect.
+-- Note that failing 'ArrConsume' operations may still consume input, so the 'Alternative' instances may not do what you expect.  You can use 'tryConsume' to roll-back consumed input on failure.
 newtype ArrConsume o m a b = ArrConsume (MaybeT (ConduitM a o m) b)
   deriving (Functor, Applicative, Monad, Alternative, MonadPlus, MonadThrow, MonadCatch, MonadIO)
 
@@ -224,17 +224,19 @@ withConsumedInput (C.ConduitM c0) = C.ConduitM $ \rest -> let
 
 -- |Similar to '>>=' except if the second action fails, any input consumed by the first conduit only is returned in leftovers.
 -- Note that input consumed by the second action is never returned.
-tryBindConsume :: Functor m => ArrConsume o m a b -> (b -> ArrConsume o m a c) -> ArrConsume o m a c
-tryBindConsume (ArrConsume (MaybeT c)) f = ArrConsume $ MaybeT $ r =<< withConsumedInput c where
+(>>?=) :: Functor m => ArrConsume o m a b -> (b -> ArrConsume o m a c) -> ArrConsume o m a c
+(>>?=) (ArrConsume (MaybeT c)) f = ArrConsume $ MaybeT $ r =<< withConsumedInput c where
   r (i, a) = do
     b <- maybe (return Nothing) (arrConsume . f) a
     when (isNothing b) $ mapM_ leftover i
     return b
 
+infixr 1 >>?=
+
 -- |If the conduit fails (with 'Nothing'), make it return any consumed any input by producing leftovers instead.
--- Equivalent to @(`'tryBindConsume'` return)@.
+-- Equivalent to @('>>?=' return)@.
 tryConsume :: Functor m => ArrConsume o m a b -> ArrConsume o m a b
-tryConsume c = tryBindConsume c return
+tryConsume = (>>?= return)
 
 -- |A specialized 'ArrConsume' that produces no outputs.
 type ArrSink = ArrConsume Void

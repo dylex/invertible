@@ -10,6 +10,9 @@ module Data.Conduit.Invertible
     -- * Parser/Generators
   , ConsumeProduce(..)
   , biConsumeProduce
+    -- ** Failure recovery
+  , (>*?<)
+  , tryConsumeProduce
     -- ** Specializations
   , SourceSink
   , biSink, biSource
@@ -45,7 +48,7 @@ import           Data.Conduit.Arrow
 type BiConduit m = I.Bijection (ArrConduit m)
 
 -- |Combine two conduits that are inverses of each other: one processes a stream down to a final value, and the other takes that value to generate a stream.
--- The forward processor may fail (using 'Nothing') in order to admit choice, but it must not consume any input if it does so.
+-- The forward processor may fail (using 'Nothing') in order to admit choice, but if they consume any input, choice may not work as expected.  You can use '>*?<' and 'tryConsumeProduce' to allow rolling back consumed input.
 -- 'ConsumeProduce' may be combined using 'I.Functor', 'Monoidal', and 'MonoidalAlt' instances.
 data ConsumeProduce i o m a b = ConsumeProduce
   { biConsume :: ArrConsume o m a b -- ^a forward processor that processes input @a@ into a final result @b@ (possibly producing output @o@)
@@ -66,13 +69,25 @@ instance I.Functor (ConsumeProduce i o m a) where
     (fmap f <$> arrConsume c)
     (arrProduce p . g)
 
-instance Functor m => Monoidal (ConsumeProduce i o m a) where
+instance Monoidal (ConsumeProduce i o m a) where
   unit = biConsumeProduce (pure $ Just ()) return
   ConsumeProduce ca pa >*< ~(ConsumeProduce cb pb) = ConsumeProduce
-    (tryBindConsume ca (\a -> (,) a <$> cb))
+    (pairADefault ca cb)
     (produceArr $ \(a, b) -> arrProduce pa a *> arrProduce pb b)
 
-instance Functor m => MonoidalAlt (ConsumeProduce i o m a) where
+-- |Like '>*<' but uses '>>?=' on the consumer, so that if the consumer fails, any input consumed by the left action (but not the right) will be rolled back as leftovers.
+(>*?<) :: Functor m => ConsumeProduce i o m a b -> ConsumeProduce i o m a c -> ConsumeProduce i o m a (b, c)
+ConsumeProduce ca pa >*?< ~(ConsumeProduce cb pb) = ConsumeProduce
+  (ca >>?= \a -> (,) a <$> cb)
+  (produceArr $ \(a, b) -> arrProduce pa a *> arrProduce pb b)
+
+infixr 4 >*?<
+
+-- |Apply 'tryConsume' to the consumer.
+tryConsumeProduce :: Functor m => ConsumeProduce i o m a b -> ConsumeProduce i o m a b
+tryConsumeProduce (ConsumeProduce c p) = ConsumeProduce (tryConsume c) p
+
+instance MonoidalAlt (ConsumeProduce i o m a) where
   zero = biConsumeProduce (pure Nothing) (return . absurd)
   ConsumeProduce ca pa >|< ~(ConsumeProduce cb pb) = biConsumeProduce
     (arrConsume ca >>= maybe (fmap Right <$> arrConsume cb) (return . Just . Left))
@@ -142,13 +157,13 @@ foldMapM = maybe (return Nothing)
 pass :: Monad m => ConsumeProduce i o m a a
 pass = biConsumeProduce await yield
 
--- |Only take/give values matching the given predecate; fail or give nothing otherwise
+-- |Only take/give values matching the given predecate; fail and give/take nothing otherwise.
 predicate :: Monad m => (a -> Bool) -> ConsumeProduce i o m a a
 predicate f = biConsumeProduce
   (foldMapM (\x -> if f x then return $ Just x else Nothing <$ leftover x) =<< await)
   (\x -> when (f x) $ yield x)
 
--- |Only take/give a single value, failing on anything else.
+-- |Only take/give a single value, failing and taking nothing on anything else.
 exactly :: (Eq a, Monad m) => a -> ConsumeProduce i o m a ()
 exactly y = partial (guard . (y ==)) (const y)
 -- exactly y = constI y $ predicate (y ==)
