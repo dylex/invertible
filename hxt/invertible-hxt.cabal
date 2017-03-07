@@ -1,5 +1,5 @@
 name:                invertible-hxt
-version:             0
+version:             0.1
 synopsis:            invertible transformer instances for HXT Picklers
 description:         Provides alternative syntax for HXT's Picklers (XML parser/generators) based on generic invertible Monoidal
 license:             BSD3
