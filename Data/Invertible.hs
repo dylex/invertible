@@ -7,7 +7,10 @@
 -- 
 -- > import qualified Data.Invertible as Inv
 --
+{-# LANGUAGE CPP #-}
+#if !(defined(VERSION_semigroupoids) && MIN_VERSION_semigroupoids(5,2,2))
 {-# LANGUAGE Safe #-}
+#endif
 module Data.Invertible
   ( module Data.Invertible.Bijection
   , module Data.Invertible.TH

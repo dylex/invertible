@@ -5,7 +5,10 @@
 -- 
 -- > import qualified Control.Invertible.Functor as Inv
 --
-{-# LANGUAGE CPP, Safe, TypeOperators, FlexibleInstances #-}
+{-# LANGUAGE CPP, TypeOperators, FlexibleInstances #-}
+#if !(defined(VERSION_semigroupoids) && MIN_VERSION_semigroupoids(5,2,2))
+{-# LANGUAGE Safe #-}
+#endif
 module Control.Invertible.Functor
   ( Functor(..)
   , fmapDefault

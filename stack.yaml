@@ -7,6 +7,7 @@ extra-deps:
 - Stream-0.4.7.2
 - arrows-0.4.4.1
 - lazysmallcheck-0.6
+- TypeCompose-0.9.12
 ghc-options:
   invertible: -Wall -Wno-orphans
   invertible-hxt: -Wall

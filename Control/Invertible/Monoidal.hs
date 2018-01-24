@@ -2,7 +2,10 @@
 -- Invariant monoidal functors.
 -- 
 -- This roughly corresponds to "Control.Applicative", but exposes a non-overlapping API so can be imported unqualified.  It does, however, use operators similar to those provided by contravariant.
-{-# LANGUAGE CPP, Safe, TypeOperators, FlexibleInstances #-}
+{-# LANGUAGE CPP, TypeOperators, FlexibleInstances #-}
+#if !(defined(VERSION_semigroupoids) && MIN_VERSION_semigroupoids(5,2,2))
+{-# LANGUAGE Safe #-}
+#endif
 module Control.Invertible.Monoidal
   ( Bijection(..)
   , I.biCase

@@ -1,7 +1,11 @@
 -- |
 -- The bidirectional \"Prelude\", which re-exports various bijections similar to functions from "Prelude".
 -- Most \"un\"-functions are left out for obvious reasons.
-{-# LANGUAGE Safe, TypeOperators #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE TypeOperators #-}
+#if !(defined(VERSION_semigroupoids) && MIN_VERSION_semigroupoids(5,2,2))
+{-# LANGUAGE Safe #-}
+#endif
 module Data.Invertible.Prelude
   ( (<->)
   , type (<->)

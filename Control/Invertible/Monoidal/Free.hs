@@ -1,7 +1,11 @@
-{-# LANGUAGE Safe, GADTs, RankNTypes, TupleSections, TypeOperators, QuasiQuotes #-}
 -- |
 -- A vague analog of free monads for invariant monoidals.
 -- This can provide a simple basis for things like invertible parsers.
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE GADTs, RankNTypes, TupleSections, TypeOperators, QuasiQuotes #-}
+#if !(defined(VERSION_semigroupoids) && MIN_VERSION_semigroupoids(5,2,2))
+{-# LANGUAGE Safe #-}
+#endif
 module Control.Invertible.Monoidal.Free
   ( Free(..)
   , showsFree

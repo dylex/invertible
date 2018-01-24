@@ -7,9 +7,12 @@
 -- * @m a '<->' m b@
 --
 -- The Alimarine paper just calls it \"MoT\" for Monad Transformer.
-{-# LANGUAGE CPP, Safe, TupleSections, FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE CPP, TupleSections, FlexibleInstances, FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TypeOperators #-}
+#if !(defined(VERSION_semigroupoids) && MIN_VERSION_semigroupoids(5,2,2))
+{-# LANGUAGE Safe #-}
+#endif
 module Control.Invertible.MonadArrow
   ( MonadArrow(..)
   , MonadFunction
