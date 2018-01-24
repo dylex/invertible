@@ -1,5 +1,5 @@
 name:                invertible-conduit
-version:             0
+version:             0.1
 synopsis:            Bi-directional conduits and conduit Arrows including an XML parser/generator
 description:         Various Arrow instances for conduits, allowing more convenient syntax for composition.  Bi-directional (reversible) conduits admit invertible Monoidal instances, allowing easy construction of parser/generators.  Includes support for invertible xml-conduit streamers, allowing a single specification for XML parsering and generation.
 license:             BSD3
@@ -37,5 +37,5 @@ library
     build-depends:
       exceptions,
       text,
-      xml-conduit,
+      xml-conduit >= 1.5,
       xml-types

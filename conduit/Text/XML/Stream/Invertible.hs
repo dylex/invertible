@@ -1,6 +1,7 @@
 -- |Combine "Text.XML.Stream.Parser" and "Text.XML.Stream.Render" into a single, invertible stream using "Data.Conduit.Invertible".
 --
 -- These functions match the names in "Text.XML.Stream.Parser" as closely as possible, even when they aren't necessariy consistent.
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TupleSections #-}
 module Text.XML.Stream.Invertible
   ( module Control.Invertible.Monoidal
@@ -81,11 +82,6 @@ streamerParser e = P.force e . biSink
 streamerRender :: Streamer m a -> a -> C.Source m X.Event
 streamerRender = biSource
 
-justIf :: (a -> Bool) -> a -> Maybe a
-justIf p x
-  | p x = Just x
-  | otherwise = Nothing
-
 -- |Apply 'P.force', forcing a 'Streamer' to succeed and throwing an error if not.
 -- (This is not encoded in the type because 'ConsumeProduce's can always fail, although 'force' never does.)
 force :: MonadThrow m => String -> Streamer m a -> Streamer m a
@@ -136,7 +132,7 @@ tagPredicate :: MonadThrow m
   -> Streamer m b -- ^children handler
   -> Streamer m (X.Name, a, b)
 tagPredicate np (AttrStreamer ap ar) (ConsumeProduce bp br) = biConsumeProduce
-  (P.tag (justIf np) ((<$> ap) . (,)) $ \(n,a) -> (,,) n a <$> P.force ("failed to parse body of tag " ++ show n) (arrConsume bp))
+  (P.tag (P.matching np) ((<$> ap) . (,)) $ \(n,a) -> (,,) n a <$> P.force ("failed to parse body of tag " ++ show n) (arrConsume bp))
   (\(n, a, b) -> when (np n) $ R.tag n (ar a) (arrProduce br b))
 
 -- |Require a tag with the given name, providing handlers for attributes and body.
@@ -148,7 +144,7 @@ tagName :: MonadThrow m
   -> Streamer m b -- ^children handler
   -> Streamer m (a, b)
 tagName n (AttrStreamer ap ar) (ConsumeProduce bp br) = biConsumeProduce
-  (P.tagName n ap $ (<$> P.force ("failed to parse body of tag " ++ show n) (arrConsume bp)) . (,))
+  (P.tag' (P.matching (n ==)) ap $ (<$> P.force ("failed to parse body of tag " ++ show n) (arrConsume bp)) . (,))
   (\(a, b) -> R.tag n (ar a) (arrProduce br b))
 
 -- |Require a tag with the given name, generating an error for any attributes, providing a handler for the body.
@@ -178,28 +174,28 @@ emptyTagR n = R.tag n mempty (return ())
 -- The whole action fails iff the next tag's name does not match.
 emptyTag :: MonadThrow m => (X.Name -> Bool) -> Streamer m X.Name
 emptyTag np = biConsumeProduce
-  (P.tag (justIf np) return return)
+  (P.tag (P.matching np) return return)
   (\n -> when (np n) $ emptyTagR n)
 
 -- |Require a tag with the given name, producing an error for any attributes or children.
 -- The whole action fails iff the next tag's name does not match.
 emptyTagName :: MonadThrow m => X.Name -> Streamer m ()
 emptyTagName n = biConsumeProduce
-  (P.tagName n (return ()) return)
+  (P.tag' (P.matching (n ==)) (return ()) return)
   (\() -> emptyTagR n)
 
 -- |Require a tag with a name that matches the given predicate, ignoring any attributes and producing an error for any children.
 -- The whole action fails iff the next tag's name does not match.
 ignoreTag :: MonadThrow m => (X.Name -> Bool) -> Streamer m X.Name
 ignoreTag np = biConsumeProduce
-  (P.tag (justIf np) (<$ P.ignoreAttrs) return)
+  (P.tag (P.matching np) (<$ P.ignoreAttrs) return)
   (\n -> when (np n) $ emptyTagR n)
 
 -- |Require a tag with the given name, ignoring any attributes and producing an error for any children.
 -- The whole action fails iff the next tag's name does not match.
 ignoreTagName :: MonadThrow m => X.Name -> Streamer m ()
 ignoreTagName n = biConsumeProduce
-  (P.ignoreTagName n)
+  (P.ignoreEmptyTag (P.matching (n ==)))
   (\() -> emptyTagR n)
 
 -- |Require a (single) tag, ignoring any attributes and producing an error for any children.
@@ -211,14 +207,14 @@ ignoreAllTags = ignoreTag (const True)
 -- The whole action fails iff the next tag's name does not match.
 ignoreTree :: MonadThrow m => (X.Name -> Bool) -> Streamer m X.Name 
 ignoreTree np = biConsumeProduce
-  (P.tag (justIf np) (<$ P.ignoreAttrs) (<$ ignoreNodesP))
+  (P.tag (P.matching np) (<$ P.ignoreAttrs) (<$ ignoreNodesP))
   (\n -> when (np n) $ emptyTagR n)
 
 -- |Require a tag with the given name, ignoring any attributes and children recursively.
 -- The whole action fails iff the next tag's name does not match.
 ignoreTreeName :: MonadThrow m => X.Name -> Streamer m ()
 ignoreTreeName n = biConsumeProduce
-  (P.ignoreTreeName n)
+  (P.ignoreTreeContent (P.matching (n ==)))
   (\() -> emptyTagR n)
 
 -- |Require a (single) tag, ignoring any attributes and children recursively.

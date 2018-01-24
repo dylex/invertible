@@ -1,4 +1,4 @@
-resolver: lts-8.4
+resolver: lts-10.3
 packages:
 - location: .
 - location: hxt
@@ -8,6 +8,6 @@ extra-deps:
 - arrows-0.4.4.1
 - lazysmallcheck-0.6
 ghc-options:
-  invertible: -Wall -Werror -Wno-orphans
-  invertible-hxt: -Wall -Werror
-  invertible-conduit: -Wall -Werror
+  invertible: -Wall -Wno-orphans
+  invertible-hxt: -Wall
+  invertible-conduit: -Wall
