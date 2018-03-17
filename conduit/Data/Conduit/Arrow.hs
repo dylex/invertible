@@ -1,6 +1,7 @@
 -- |Various 'Arrow' instances for "Data.Conduit"s.
 -- The newtype wrappers here are somewhat similar to the types provided by old conduit versions (pre-0.4).
 -- Arrows and Monads definied here function much like the list monad when dealing with multiple inputs and outputs, producing concatenation and cross-products.
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -28,6 +29,14 @@ import qualified Data.Conduit.Internal as C
 import qualified Data.Conduit.List as CL
 import           Data.Maybe (isNothing)
 import           Data.Void (Void)
+
+#if MIN_VERSION_conduit(1,3,0)
+#define ConduitM ConduitT
+#define unConduitM unConduitT
+#define PRE13(x)
+#else
+#define PRE13(x) x
+#endif
 
 nop :: Applicative a => a ()
 nop = pure ()
@@ -63,7 +72,13 @@ instance Monad m => Monad (ArrConduit m a) where
   ArrConduit (C.ConduitM a0) >>= f = ArrConduit $ C.ConduitM $ \rest -> let
     go (C.Done u) = rest u
     go (C.PipeM m) = C.PipeM (go <$> m)
-    go (C.HaveOutput a z x) = C.unConduitM (arrConduit (f x)) (\() -> C.PipeM (go a <$ z))
+    go (C.HaveOutput a PRE13(z) x) = C.unConduitM (arrConduit (f x)) (\() ->
+#if MIN_VERSION_conduit(1,3,0)
+      go a
+#else
+      C.PipeM (go a <$ z)
+#endif
+      )
     go (C.NeedInput a e) = C.NeedInput (go . a) (go . e)
     go (C.Leftover a l) = C.Leftover (go a) l
     in go (a0 C.Done)
@@ -78,8 +93,10 @@ instance Monad m => MonadPlus (ArrConduit m a)
 instance MonadThrow m => MonadThrow (ArrConduit m a) where
   throwM = ArrConduit . throwM
 
+#if !MIN_VERSION_conduit(1,3,0)
 instance MonadCatch m => MonadCatch (ArrConduit m a) where
   catch (ArrConduit m) f = ArrConduit $ catch m (arrConduit . f)
+#endif
 
 instance MonadIO m => MonadIO (ArrConduit m a) where
   liftIO f = ArrConduit $ liftIO f >>= yield
@@ -110,7 +127,7 @@ instance Monad m => Arrow (ArrConduit m) where
       (\(a, b) -> go (ArrConduitInput b a) p)
       rest
     go s (C.Leftover p i) = C.Leftover (go s p) (i, arrConduitState' s)
-    go s (C.HaveOutput p f o) = C.HaveOutput (go s p) f (o, arrConduitState' s)
+    go s (C.HaveOutput p PRE13(f) o) = C.HaveOutput (go s p) PRE13(f) (o, arrConduitState' s)
     in go ArrConduitStart (c0 C.Done)
   second (ArrConduit (C.ConduitM c0)) = ArrConduit $ C.ConduitM $ \rest -> let
     go _ (C.Done _) = rest ()
@@ -122,7 +139,7 @@ instance Monad m => Arrow (ArrConduit m) where
       (\(a, b) -> go (ArrConduitInput a b) p)
       rest
     go s (C.Leftover p i) = C.Leftover (go s p) (arrConduitState' s, i)
-    go s (C.HaveOutput p f o) = C.HaveOutput (go s p) f (arrConduitState' s, o)
+    go s (C.HaveOutput p PRE13(f) o) = C.HaveOutput (go s p) PRE13(f) (arrConduitState' s, o)
     in go ArrConduitStart (c0 C.Done)
   f *** g = first f Cat.>>> second g
 
@@ -137,8 +154,8 @@ instance Monad m => ArrowChoice (ArrConduit m) where
     go (C.Done _) (C.Done _)  = rest ()
     go (C.PipeM l) r          = C.PipeM      (og r <$> l)
     go l (C.PipeM r)          = C.PipeM      (go l <$> r)
-    go (C.HaveOutput l f o) r = C.HaveOutput (go l r) f (Left o)
-    go l (C.HaveOutput r f o) = C.HaveOutput (go l r) f (Right o)
+    go (C.HaveOutput l PRE13(f) o) r = C.HaveOutput (go l r) PRE13(f) (Left o)
+    go l (C.HaveOutput r PRE13(f) o) = C.HaveOutput (go l r) PRE13(f) (Right o)
     go (C.Leftover l i) r     = C.Leftover   (go l r)   (Left i)
     go l (C.Leftover r i)     = C.Leftover   (go l r)   (Right i)
     go l r = C.NeedInput
@@ -194,7 +211,11 @@ instance Monad m => MonadPlus (ArrProduce i m a)
 -- 'Monad' instances are equivalent to 'ConduitM'.
 -- Note that failing 'ArrConsume' operations may still consume input, so the 'Alternative' instances may not do what you expect.  You can use 'tryConsume' to roll-back consumed input on failure.
 newtype ArrConsume o m a b = ArrConsume (MaybeT (ConduitM a o m) b)
-  deriving (Functor, Applicative, Monad, Alternative, MonadPlus, MonadThrow, MonadCatch, MonadIO)
+  deriving (Functor, Applicative, Monad, Alternative, MonadPlus, MonadThrow
+#if !MIN_VERSION_conduit(1,3,0)
+    , MonadCatch
+#endif
+    , MonadIO)
 
 -- |Unwrap an 'ArrConsume'
 arrConsume :: ArrConsume o m a b -> ConduitM a o m (Maybe b)
@@ -216,7 +237,7 @@ withConsumedInput :: Functor m => ConduitM a o m b -> ConduitM a o m ([a], b)
 withConsumedInput (C.ConduitM c0) = C.ConduitM $ \rest -> let
   go l (C.Done a) = rest (l, a)
   go l (C.PipeM m) = C.PipeM (go l <$> m)
-  go l (C.HaveOutput x f o) = C.HaveOutput (go l x) f o
+  go l (C.HaveOutput x PRE13(f) o) = C.HaveOutput (go l x) PRE13(f) o
   go (_i:l) (C.Leftover c i) = C.Leftover (go l c) i -- i == _i
   go l (C.Leftover c i) = C.Leftover (go l c) i -- HRM!
   go l (C.NeedInput f e) = C.NeedInput (\i -> go (i:l) $ f i) (go l . e)
@@ -252,8 +273,8 @@ instance Monad m => Arrow (ArrConsume o m) where
     go _ (C.Done a) (C.Done b) = rest $ liftA2 (,) a b
     go lo (C.PipeM mx) y = C.PipeM (og lo y <$> mx)
     go lo x (C.PipeM my) = C.PipeM (go lo x <$> my)
-    go lo (C.HaveOutput x f o) y = C.HaveOutput (go lo x y) f o
-    go lo x (C.HaveOutput y f o) = C.HaveOutput (go lo x y) f o
+    go lo (C.HaveOutput x PRE13(f) o) y = C.HaveOutput (go lo x y) PRE13(f) o
+    go lo x (C.HaveOutput y PRE13(f) o) = C.HaveOutput (go lo x y) PRE13(f) o
     go (Right (lr:lo)) (C.Leftover l ll) r = C.Leftover (go (Right lo) l r) (ll, lr)
     go lo              (C.Leftover l ll) r = go (Left  (ll:either id (const []) lo)) l r
     go (Left  (ll:lo)) l (C.Leftover r lr) = C.Leftover (go (Left  lo) l r) (ll, lr)
