@@ -1,5 +1,6 @@
 -- |
 -- Bidirectional transforms for "Data.Monoid".
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE Safe, TypeOperators, QuasiQuotes #-}
 module Data.Invertible.Monoid
   ( BiEndo(..)
@@ -32,6 +33,11 @@ endo = [biCase|a <-> Endo a|]
 
 -- | The monoid of endomorphisms under composition.
 newtype BiEndo a = BiEndo { appBiEndo :: a <-> a }
+
+#if MIN_VERSION_base(4,11,0)
+instance Semigroup (BiEndo a) where
+  BiEndo f <> BiEndo g = BiEndo (f C.. g)
+#endif
 
 instance Monoid (BiEndo a) where
   mempty = BiEndo C.id
