@@ -17,6 +17,7 @@ category:            Data, Control, Composition
 build-type:          Simple
 cabal-version:       >=1.10
 tested-with:         GHC == 7.10.3, GHC == 8.0.1
+extra-source-files:  README
 
 source-repository head
   type: git
