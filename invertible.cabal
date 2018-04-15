@@ -50,7 +50,7 @@ flag semigroupoids
 flag TypeCompose
   description: Support the TypeCompose package
   manual: True
-  default: True
+  default: False
 
 library
   other-modules:
