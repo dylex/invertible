@@ -82,6 +82,9 @@ instance Monad m => Monad (ArrConduit m a) where
     go (C.NeedInput a e) = C.NeedInput (go . a) (go . e)
     go (C.Leftover a l) = C.Leftover (go a) l
     in go (a0 C.Done)
+#if MIN_VERSION_base(4,13,0)
+instance MonadFail m => MonadFail (ArrConduit m a) where
+#endif
   fail = ArrConduit . fail
 
 instance Monad m => Alternative (ArrConduit m a) where
@@ -198,6 +201,9 @@ instance Monad m => Applicative (ArrProduce i m a) where
 
 instance Monad m => Monad (ArrProduce i m a) where
   Kleisli a >>= f = Kleisli $ \x -> a x >>= flip (runKleisli . f) x
+#if MIN_VERSION_base(4,13,0)
+instance MonadFail m => MonadFail (ArrProduce i m a) where
+#endif
   fail = Kleisli . const . fail
 
 instance Monad m => Alternative (ArrProduce i m a) where

@@ -214,7 +214,11 @@ ignoreTree np = biConsumeProduce
 -- The whole action fails iff the next tag's name does not match.
 ignoreTreeName :: MonadThrow m => X.Name -> Streamer m ()
 ignoreTreeName n = biConsumeProduce
-  (P.ignoreTreeContent (P.matching (n ==)))
+  (P.ignoreTreeContent (P.matching (n ==))
+#if MIN_VERSION_xml_conduit(1,9,0)
+    P.ignoreAttrs
+#endif
+    )
   (\() -> emptyTagR n)
 
 -- |Require a (single) tag, ignoring any attributes and children recursively.
