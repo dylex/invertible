@@ -192,6 +192,7 @@ produceArr f = Kleisli (ArrConduit . f)
 -- |A specialized 'ArrProduce' that consumes no inputs.
 type ArrSource m = ArrProduce () m
 
+#if !MIN_VERSION_base(4,14,0)
 instance Monad m => Functor (ArrProduce i m a) where
   fmap f (Kleisli a) = Kleisli $ fmap f . a
 
@@ -211,6 +212,7 @@ instance Monad m => Alternative (ArrProduce i m a) where
   Kleisli f <|> Kleisli g = Kleisli $ \x -> f x <|> g x
 
 instance Monad m => MonadPlus (ArrProduce i m a)
+#endif
 
 -- |A stream processor 'Arrow' from conduit inputs to a possible final result.
 -- 'await' provides an identity, and composition provides (at most) a single input to the outer conduit.

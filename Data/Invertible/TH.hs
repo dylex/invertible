@@ -49,8 +49,16 @@ patToPat = ptp . gmapT pta where
 patToExp :: TH.Pat -> TH.Exp
 patToExp (TH.LitP l) = TH.LitE l
 patToExp (TH.VarP v) = TH.VarE v
-patToExp (TH.TupP l) = TH.TupE $ map patToExp l
-patToExp (TH.UnboxedTupP l) = TH.UnboxedTupE $ map patToExp l
+patToExp (TH.TupP l) = TH.TupE $ map (
+#if MIN_VERSION_template_haskell(2,16,0)
+  Just .
+#endif
+  patToExp) l
+patToExp (TH.UnboxedTupP l) = TH.UnboxedTupE $ map (
+#if MIN_VERSION_template_haskell(2,16,0)
+  Just .
+#endif
+  patToExp) l
 #if MIN_VERSION_template_haskell(2,12,0)
 patToExp (TH.UnboxedSumP p a n) = TH.UnboxedSumE (patToExp p) a n
 #endif
