@@ -95,7 +95,7 @@ library
     build-depends: invariant
   if flag(lens)
     exposed-modules: Data.Invertible.Lens
-    build-depends: lens == 4.*
+    build-depends: lens >= 4 && < 6
   if flag(partial-isomorphisms)
     exposed-modules: Data.Invertible.PartialIsomorphism
     if impl(ghc >= 8)
