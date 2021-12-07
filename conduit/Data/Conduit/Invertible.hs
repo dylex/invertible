@@ -122,7 +122,7 @@ biConsumer :: ProducerConsumer m a b -> Consumer a m (Maybe b)
 biConsumer (ConsumeProduce c _) = arrConsume c
 
 -- |Specialization of 'biProduce'
-biProducer :: ConsumeProduce i o m a b -> b -> ConduitT i a m ()
+biProducer :: ConsumeProduce i o m a b -> b -> Conduit i m a
 biProducer (ConsumeProduce _ k) = arrProduce k
 
 -- |Combine 'toConsumer' and 'toProducer'.

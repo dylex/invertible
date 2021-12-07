@@ -62,7 +62,11 @@ patToExp (TH.UnboxedTupP l) = TH.UnboxedTupE $ map (
 #if MIN_VERSION_template_haskell(2,12,0)
 patToExp (TH.UnboxedSumP p a n) = TH.UnboxedSumE (patToExp p) a n
 #endif
-patToExp (TH.ConP c a) = foldl (\f -> TH.AppE f . patToExp) (TH.ConE c) a
+patToExp (TH.ConP c
+#if MIN_VERSION_template_haskell(2,18,0)
+  _ -- [Type], probably should have to be empty
+#endif
+  a) = foldl (\f -> TH.AppE f . patToExp) (TH.ConE c) a
 patToExp (TH.InfixP l o r) = TH.InfixE (Just $ patToExp l) (TH.ConE o) (Just $ patToExp r)
 patToExp (TH.UInfixP l o r) = TH.UInfixE (patToExp l) (TH.ConE o) (patToExp r)
 patToExp (TH.ParensP p) = TH.ParensE $ patToExp p
