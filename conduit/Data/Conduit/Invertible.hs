@@ -122,8 +122,8 @@ biConsumer :: ProducerConsumer m a b -> Consumer a m (Maybe b)
 biConsumer (ConsumeProduce c _) = arrConsume c
 
 -- |Specialization of 'biProduce'
-biProducer :: ProducerConsumer m a b -> b -> Producer m a
-biProducer (ConsumeProduce _ (Kleisli p)) = arrConduit . p
+biProducer :: ConsumeProduce i o m a b -> b -> ConduitT i a m ()
+biProducer (ConsumeProduce _ k) = arrProduce k
 
 -- |Combine 'toConsumer' and 'toProducer'.
 toProducerConsumer :: Monad m => SourceSink m a b -> ProducerConsumer m a b
