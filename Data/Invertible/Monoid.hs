@@ -41,7 +41,9 @@ instance Semigroup (BiEndo a) where
 
 instance Monoid (BiEndo a) where
   mempty = BiEndo C.id
+#if !MIN_VERSION_base(4,11,0)
   BiEndo f `mappend` BiEndo g = BiEndo (f C.. g)
+#endif
 
 -- |(Un)wrap the 'BiEndo' monoid.
 biEndo :: (a <-> a) <-> BiEndo a
